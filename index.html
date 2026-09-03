@@ -4,324 +4,216 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Quinielas El Piji Achotero</title>
+<meta name="theme-color" content="#0B1220">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 :root{
-  /* base: azul noche para que el contenido se lea sobre las banderas */
-  --cancha:#132539; --cancha-2:#0A1626; --raya:#20385A;
-  --cal:#F5F3EE; --cal-suave:rgba(245,243,238,.60); --cal-tenue:rgba(245,243,238,.20);
-  --ambar:#E8B33C; --ambar-hondo:#A97C16;
-  --roja:#CE1126; --verde:#007A4D;
-  --verde-mx:#006847; --rojo-mx:#CE1126;
-  --azul-us:#0A3161; --rojo-us:#B31942;
-  --r:12px;
+  --fondo:#0B1220; --panel:#131C2E; --panel-2:#182338; --linea:#23314C;
+  --texto:#EDF0F5; --suave:rgba(237,240,245,.60); --tenue:rgba(237,240,245,.20);
+  --oro:#D4A438; --oro-alto:#E8C46A; --oro-hondo:#9A7415;
+  --mx:#0E7A4F; --us:#1D4E89; --rojo:#C0392B; --verde:#12A06A;
+  --r:14px;
 }
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 html{-webkit-text-size-adjust:100%}
-body{
-  background:var(--cancha-2);
-  color:var(--cal);
-  font:400 16px/1.5 'Barlow',system-ui,sans-serif;
-  min-height:100vh;padding-bottom:64px;position:relative;overflow-x:hidden;
-}
-
-/* ============ FONDO: MÉXICO A LA IZQUIERDA, USA A LA DERECHA ============ */
-body::before,body::after{
-  content:'';position:fixed;inset:0;z-index:-2;pointer-events:none;
-}
-/* México: bandas verticales verde, blanco, rojo */
-body::before{
-  background:linear-gradient(90deg,
-    var(--verde-mx) 0 33.3%, #FFFFFF 33.3% 66.6%, var(--rojo-mx) 66.6% 100%);
-  clip-path:polygon(0 0, 58% 0, 42% 100%, 0 100%);
-  opacity:.30;
-}
-/* Estados Unidos: barras + cantón azul con estrellas */
-body::after{
-  background:
-    radial-gradient(circle at 12px 12px, #FFF 1.6px, transparent 1.8px) 0 0/34px 34px,
-    linear-gradient(var(--azul-us),var(--azul-us)) 0 0/56% 46% no-repeat,
-    repeating-linear-gradient(180deg, var(--rojo-us) 0 7.7%, #FFFFFF 7.7% 15.4%);
-  background-blend-mode:screen,normal,normal;
-  clip-path:polygon(58% 0, 100% 0, 100% 100%, 42% 100%);
-  opacity:.30;
-}
-/* velo oscuro para que todo se lea */
-.velo{position:fixed;inset:0;z-index:-1;pointer-events:none;
-  background:linear-gradient(180deg,rgba(10,22,38,.80) 0%,rgba(10,22,38,.90) 40%,rgba(10,22,38,.95) 100%)}
-
-.wrap{max-width:640px;margin:0 auto;padding:0 16px}
-.hide{display:none !important}
-h1,h2,h3{font-family:'Barlow Condensed','Barlow',sans-serif;letter-spacing:.01em;line-height:1.05}
+body{background:var(--fondo);color:var(--texto);font:400 16px/1.55 'Barlow',system-ui,sans-serif;min-height:100vh;padding-bottom:70px}
+body::before{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;
+  background:radial-gradient(900px 500px at 15% -5%, rgba(14,122,79,.16), transparent 60%),
+             radial-gradient(900px 500px at 85% -5%, rgba(29,78,137,.18), transparent 60%)}
+h1,h2,h3,.cond{font-family:'Barlow Condensed','Barlow',sans-serif;line-height:1.06;letter-spacing:.005em}
 button,input,select,textarea{font-family:inherit;font-size:16px}
 button{cursor:pointer;border:none;background:none;color:inherit}
-a{color:var(--ambar)}
+a{color:var(--oro)}
+.wrap{max-width:660px;margin:0 auto;padding:0 16px}
+.hide{display:none !important}
 
-/* ============ BARRA ============ */
-.barra{
-  background:rgba(19,37,57,.94);backdrop-filter:blur(8px);
-  position:sticky;top:0;z-index:40;padding-top:env(safe-area-inset-top);
-  border-bottom:1px solid var(--raya);
-}
-.barra::after{
-  content:'';display:block;height:4px;
-  background:linear-gradient(90deg,
-    var(--verde-mx) 0 20%, #FFF 20% 27%, var(--rojo-mx) 27% 47%,
-    var(--azul-us) 47% 60%, var(--rojo-us) 60% 73%, #FFF 73% 86%, var(--rojo-us) 86% 100%);
-}
-.barra-in{display:flex;align-items:center;gap:12px;padding:12px 16px;max-width:640px;margin:0 auto}
-.escudo{
-  width:42px;height:42px;flex:0 0 42px;border-radius:50%;
-  background:linear-gradient(140deg,var(--verde-mx) 0 50%, var(--azul-us) 50% 100%);
-  border:2px solid var(--ambar);color:#FFF;
-  display:grid;place-items:center;font-family:'Barlow Condensed';font-weight:700;font-size:19px;
-  box-shadow:0 0 0 3px rgba(232,179,60,.18);
-}
-.barra h1{font-size:20px;font-weight:700;text-transform:uppercase}
-.barra small{display:block;font-size:11px;color:var(--cal-suave);letter-spacing:.08em;text-transform:uppercase;font-family:'Barlow'}
-.salir{margin-left:auto;font-size:13px;color:var(--cal-suave);border-bottom:1px solid var(--cal-tenue);padding-bottom:1px}
+/* ---------- BARRA ---------- */
+.barra{background:rgba(11,18,32,.92);backdrop-filter:blur(10px);position:sticky;top:0;z-index:40;padding-top:env(safe-area-inset-top);border-bottom:1px solid var(--linea)}
+.tricolor{height:3px;background:linear-gradient(90deg,var(--mx) 0 16%,#F2F2F2 16% 22%,var(--rojo) 22% 38%,transparent 38% 46%,var(--us) 46% 62%,#F2F2F2 62% 68%,var(--rojo) 68% 84%,var(--us) 84% 100%)}
+.barra-in{display:flex;align-items:center;gap:12px;padding:11px 16px;max-width:660px;margin:0 auto}
+.barra h1{font-size:19px;font-weight:700;text-transform:uppercase}
+.barra small{display:block;font-size:11px;color:var(--suave);letter-spacing:.09em;text-transform:uppercase;font-family:'Barlow';font-weight:500}
+.salir{margin-left:auto;font-size:13px;color:var(--suave);padding:6px 12px;border:1px solid var(--linea);border-radius:999px}
 
-/* ============ TABS estilo pastilla ============ */
-.tabs{background:rgba(19,37,57,.94);backdrop-filter:blur(8px);position:sticky;top:0;z-index:39;padding:8px 0;border-bottom:1px solid var(--raya)}
-.tabs-in{display:flex;gap:6px;max-width:640px;margin:0 auto;width:100%;padding:0 12px}
-.tab{
-  flex:1;padding:10px 4px;border-radius:999px;
-  font-family:'Barlow Condensed';font-size:16px;font-weight:600;text-transform:uppercase;
-  color:var(--cal-suave);border:1.5px solid transparent;transition:all .15s;
-}
-.tab.on{
-  color:#241703;border-color:var(--ambar-hondo);
-  background:linear-gradient(180deg,#F5C960,var(--ambar));
-  box-shadow:0 3px 0 var(--ambar-hondo);
-}
+/* ---------- TABS ---------- */
+.tabs{background:rgba(11,18,32,.92);backdrop-filter:blur(10px);position:sticky;top:0;z-index:39;border-bottom:1px solid var(--linea)}
+.tabs-in{display:flex;max-width:660px;margin:0 auto;width:100%;overflow-x:auto;scrollbar-width:none}
+.tabs-in::-webkit-scrollbar{display:none}
+.tab{flex:1 0 auto;min-width:82px;padding:13px 12px;font-family:'Barlow Condensed';font-size:16px;font-weight:600;text-transform:uppercase;color:var(--suave);border-bottom:2px solid transparent;position:relative}
+.tab.on{color:var(--texto);border-bottom-color:var(--oro)}
+.punto{position:absolute;top:9px;right:8px;width:7px;height:7px;border-radius:50%;background:var(--oro)}
 
-/* ============ MARCADOR ============ */
-.marcador{background:rgba(19,37,57,.92);border:1px solid var(--raya);border-radius:var(--r);margin-top:16px;overflow:hidden;box-shadow:0 8px 26px rgba(0,0,0,.35)}
-.marcador-top{padding:16px 18px 14px;border-bottom:1px dashed var(--raya);position:relative}
-.marcador-top::before{content:'';position:absolute;left:0;top:0;bottom:0;width:5px;
-  background:linear-gradient(180deg,var(--verde-mx) 0 50%,var(--azul-us) 50% 100%)}
-.marcador-top h2{font-size:26px;font-weight:700;text-transform:uppercase;padding-left:8px}
-.marcador-top p{font-size:13px;color:var(--cal-suave);margin-top:3px;padding-left:8px}
-.reloj{display:flex;gap:10px;padding:14px 18px;align-items:baseline;flex-wrap:wrap}
-.reloj .num{font-family:'Barlow Condensed';font-size:40px;font-weight:700;color:var(--ambar);line-height:1;text-shadow:0 2px 0 rgba(0,0,0,.35)}
-.reloj .etq{font-size:12px;color:var(--cal-suave);letter-spacing:.06em}
-.bolsa{display:flex;justify-content:space-between;align-items:center;padding:13px 18px;
-  background:linear-gradient(90deg,rgba(0,104,71,.22),rgba(10,49,97,.22));border-top:1px solid var(--raya)}
-.bolsa b{font-family:'Barlow Condensed';font-size:32px;font-weight:700;color:var(--ambar)}
-.bolsa span{font-size:13px;color:var(--cal-suave)}
+/* ---------- CARDS ---------- */
+.card{background:var(--panel);border:1px solid var(--linea);border-radius:var(--r);overflow:hidden;margin-top:16px}
+.card-cab{padding:13px 16px;border-bottom:1px solid var(--linea);display:flex;justify-content:space-between;align-items:center;background:var(--panel-2)}
+.card-cab h3{font-size:16px;font-weight:700;text-transform:uppercase;letter-spacing:.03em}
+.card-cab em{font-style:normal;font-size:12px;color:var(--suave)}
+.card-cuerpo{padding:16px}
 
-/* ============ BOLETA ============ */
-.boleta{margin-top:18px;border:1px solid var(--raya);border-radius:var(--r);background:rgba(19,37,57,.92);overflow:hidden;box-shadow:0 8px 26px rgba(0,0,0,.3)}
-.boleta-cab{padding:12px 16px;background:linear-gradient(90deg,var(--verde-mx),var(--azul-us));display:flex;justify-content:space-between;align-items:center}
-.boleta-cab h3{font-size:17px;text-transform:uppercase;font-weight:700}
-.boleta-cab em{font-style:normal;font-size:13px;color:rgba(255,255,255,.75)}
-.grupo{padding:8px 16px;background:rgba(232,179,60,.10);border-bottom:1px solid var(--raya);
-  font-family:'Barlow Condensed';font-size:14px;font-weight:700;letter-spacing:.1em;color:var(--ambar);text-transform:uppercase}
-.filap{display:grid;grid-template-columns:1fr auto;gap:10px;padding:14px 16px;border-bottom:1px solid var(--raya);align-items:center}
+/* ---------- MARCADOR ---------- */
+.marcador{background:var(--panel);border:1px solid var(--linea);border-radius:var(--r);margin-top:16px;overflow:hidden}
+.marcador-top{padding:17px 18px 15px}
+.marcador-top h2{font-size:25px;font-weight:700;text-transform:uppercase}
+.marcador-top p{font-size:13px;color:var(--suave);margin-top:4px}
+.reloj{display:flex;gap:9px;padding:0 18px 16px;align-items:baseline;flex-wrap:wrap}
+.reloj .num{font-family:'Barlow Condensed';font-size:34px;font-weight:700;color:var(--oro);line-height:1;font-variant-numeric:tabular-nums}
+.reloj .etq{font-size:12px;color:var(--suave);letter-spacing:.05em}
+.bolsa{display:flex;justify-content:space-between;align-items:center;padding:14px 18px;background:var(--panel-2);border-top:1px solid var(--linea)}
+.bolsa b{font-family:'Barlow Condensed';font-size:30px;font-weight:700;color:var(--oro);font-variant-numeric:tabular-nums}
+.bolsa span{font-size:12px;color:var(--suave);line-height:1.4}
+
+/* ---------- PARTIDOS ---------- */
+.grupo{padding:9px 16px;background:var(--panel-2);border-bottom:1px solid var(--linea);font-family:'Barlow Condensed';font-size:13px;font-weight:700;letter-spacing:.13em;color:var(--oro);text-transform:uppercase}
+.filap{display:grid;grid-template-columns:1fr auto;gap:12px;padding:14px 16px;border-bottom:1px solid var(--linea);align-items:center}
 .filap:last-child{border-bottom:none}
 .equipos{min-width:0}
 .equipos .l,.equipos .v{font-weight:600;font-size:15px}
-.equipos .vs{font-size:11px;color:var(--cal-suave);letter-spacing:.14em;margin:2px 0}
-.equipos .hr{font-size:12px;color:var(--cal-suave);margin-top:4px}
-.equipos .num-p{display:inline-grid;place-items:center;width:20px;height:20px;border-radius:5px;
-  background:var(--raya);font-family:'Barlow Condensed';font-size:12px;color:var(--ambar);font-weight:700;margin-right:7px}
+.equipos .vs{font-size:10px;color:var(--suave);letter-spacing:.16em;margin:3px 0}
+.equipos .hr{font-size:12px;color:var(--suave);margin-top:5px}
+.num-p{display:inline-grid;place-items:center;width:19px;height:19px;border-radius:5px;background:var(--linea);font-family:'Barlow Condensed';font-size:12px;color:var(--oro);font-weight:700;margin-right:8px;vertical-align:1px}
+.picks{display:flex;gap:6px}
+.pick{width:46px;height:46px;border-radius:11px;border:1px solid var(--linea);background:var(--panel-2);
+  font-family:'Barlow Condensed';font-size:19px;font-weight:700;color:var(--suave);display:grid;place-items:center;
+  transition:transform .07s,background .15s,color .15s}
+.pick:active:not(:disabled){transform:scale(.94)}
+.pick:disabled{opacity:.45;cursor:default}
+.pick.sel{color:#fff;border-color:transparent}
+.pick.sel:nth-child(1){background:var(--mx)}
+.pick.sel:nth-child(2){background:var(--oro);color:#201804}
+.pick.sel:nth-child(3){background:var(--us)}
+.pick.acierto{outline:2px solid var(--verde);outline-offset:2px}
+.pick.fallo{outline:2px solid var(--rojo);outline-offset:2px}
+.res-chip{font-size:11px;color:var(--oro);margin-top:6px;letter-spacing:.05em;font-weight:600}
 
-/* ---- botones L / E / V con relieve ---- */
-.picks{display:flex;gap:7px}
-.pick{
-  width:46px;height:46px;border-radius:10px;
-  border:1.5px solid var(--raya);background:rgba(255,255,255,.04);
-  font-family:'Barlow Condensed';font-size:20px;font-weight:700;color:var(--cal-suave);
-  display:grid;place-items:center;transition:transform .08s,box-shadow .08s,background .15s;
-  box-shadow:0 3px 0 rgba(0,0,0,.35);
-}
-.pick:active:not(:disabled){transform:translateY(3px);box-shadow:0 0 0 rgba(0,0,0,.35)}
-.pick:disabled{opacity:.45;cursor:default;box-shadow:none}
-.pick.sel{color:#FFF;border-color:transparent;text-shadow:0 1px 2px rgba(0,0,0,.4)}
-.pick.sel:nth-child(1){background:linear-gradient(180deg,#00905F,var(--verde-mx));box-shadow:0 3px 0 #004E35}
-.pick.sel:nth-child(2){background:linear-gradient(180deg,#F5C960,var(--ambar));color:#241703;box-shadow:0 3px 0 var(--ambar-hondo);text-shadow:none}
-.pick.sel:nth-child(3){background:linear-gradient(180deg,#154A8C,var(--azul-us));box-shadow:0 3px 0 #06203F}
-.pick.acierto{outline:2.5px solid #2ECC71;outline-offset:2px}
-.pick.fallo{outline:2.5px solid var(--rojo-us);outline-offset:2px}
-.res-chip{font-size:11px;color:var(--ambar);margin-top:5px;letter-spacing:.06em;font-weight:600}
+/* ---------- BOTONES ---------- */
+.btn{display:block;width:100%;padding:15px;border-radius:12px;background:var(--oro);color:#201804;
+  font-family:'Barlow Condensed';font-size:19px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;
+  margin-top:14px;transition:transform .07s,opacity .15s}
+.btn:active:not(:disabled){transform:scale(.985);opacity:.9}
+.btn:disabled{background:var(--linea);color:var(--suave);cursor:default}
+.btn.fantasma{background:transparent;border:1px solid var(--linea);color:var(--texto)}
+.btn.chico{width:auto;padding:9px 15px;font-size:15px;margin-top:0}
+.btn.roja{background:var(--rojo);color:#fff}
+.btn.verde{background:var(--verde);color:#04210F}
 
-/* ============ BOTONES ============ */
-.btn{
-  display:block;width:100%;padding:15px;border-radius:var(--r);
-  background:linear-gradient(180deg,#F5C960,var(--ambar));color:#241703;
-  font-family:'Barlow Condensed';font-size:20px;font-weight:700;text-transform:uppercase;letter-spacing:.03em;
-  margin-top:14px;box-shadow:0 4px 0 var(--ambar-hondo);transition:transform .08s,box-shadow .08s;
-}
-.btn:active:not(:disabled){transform:translateY(4px);box-shadow:0 0 0 var(--ambar-hondo)}
-.btn:disabled{background:var(--raya);color:var(--cal-suave);box-shadow:0 4px 0 rgba(0,0,0,.3)}
-.btn.fantasma{background:rgba(255,255,255,.05);border:1.5px solid var(--raya);color:var(--cal);box-shadow:0 4px 0 rgba(0,0,0,.32)}
-.btn.chico{width:auto;padding:9px 16px;font-size:15px;margin-top:0;box-shadow:0 3px 0 var(--ambar-hondo)}
-.btn.chico.fantasma{box-shadow:0 3px 0 rgba(0,0,0,.32)}
-.btn.roja{background:linear-gradient(180deg,#E0344A,var(--rojo-us));color:#FFF;box-shadow:0 4px 0 #7C1129}
-
-/* ============ TABLA ============ */
-.tabla{margin-top:16px;border:1px solid var(--raya);border-radius:var(--r);overflow:hidden;box-shadow:0 8px 26px rgba(0,0,0,.3)}
-.tabla-cab{padding:12px 16px;background:linear-gradient(90deg,var(--verde-mx),var(--azul-us));
-  font-family:'Barlow Condensed';font-size:17px;font-weight:700;text-transform:uppercase}
-.pos{display:grid;grid-template-columns:30px 34px 1fr auto auto;gap:9px;padding:12px 16px;align-items:center;
-  border-bottom:1px solid var(--raya);background:rgba(19,37,57,.92)}
+/* ---------- TABLA ---------- */
+.pos{display:grid;grid-template-columns:28px 32px 1fr auto auto;gap:10px;padding:12px 16px;align-items:center;border-bottom:1px solid var(--linea)}
 .pos:last-child{border-bottom:none}
-.pos .lug{font-family:'Barlow Condensed';font-size:21px;font-weight:700;color:var(--cal-suave);text-align:center}
-.pos.p1{background:linear-gradient(90deg,rgba(232,179,60,.16),rgba(19,37,57,.92))}
-.pos.p1 .lug{color:var(--ambar);font-size:25px}
-.pos .av{font-size:23px;line-height:1;text-align:center}
+.pos .lug{font-family:'Barlow Condensed';font-size:19px;font-weight:700;color:var(--suave);text-align:center}
+.pos.p1{background:linear-gradient(90deg,rgba(212,164,56,.12),transparent)}
+.pos.p1 .lug{color:var(--oro);font-size:23px}
+.pos .av{font-size:22px;text-align:center;line-height:1}
 .pos .nom{font-weight:600;font-size:15px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.pos .nom small{display:block;font-weight:400;font-size:12px;color:var(--cal-suave)}
-.pos .pts{font-family:'Barlow Condensed';font-size:25px;font-weight:700}
-.pos .prem{font-size:13px;color:var(--ambar);font-weight:700}
-.deuda{font-size:11px;color:#FF7A66;font-weight:600;letter-spacing:.04em}
+.pos .nom small{display:block;font-weight:500;font-size:11px;color:var(--suave)}
+.pos .pts{font-family:'Barlow Condensed';font-size:23px;font-weight:700;font-variant-numeric:tabular-nums}
+.pos .prem{font-size:13px;color:var(--oro);font-weight:700}
+.rojo{color:#F08A7E}
 
-/* ============ FORMULARIOS ============ */
+/* ---------- FORM ---------- */
 .campo{margin-top:14px}
-.campo label{display:block;font-size:13px;color:var(--cal-suave);margin-bottom:6px}
-.campo input,.campo select{width:100%;padding:13px 14px;border-radius:10px;background:rgba(10,22,38,.75);
-  border:1.5px solid var(--raya);color:var(--cal)}
-.campo input:focus,.campo select:focus{outline:2px solid var(--ambar);border-color:transparent}
-.campo input::placeholder{color:rgba(245,243,238,.32)}
+.campo label{display:block;font-size:13px;color:var(--suave);margin-bottom:7px;font-weight:500}
+.campo input,.campo select,.campo textarea{width:100%;padding:13px 14px;border-radius:11px;background:var(--fondo);border:1px solid var(--linea);color:var(--texto)}
+.campo textarea{min-height:180px;resize:vertical;font-size:14px;line-height:1.6}
+.campo input:focus,.campo select:focus,.campo textarea:focus{outline:2px solid var(--oro);border-color:transparent}
+.campo input::placeholder,.campo textarea::placeholder{color:rgba(237,240,245,.30)}
 .fila2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .fila3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.lada{display:grid;grid-template-columns:118px 1fr;gap:10px}
 
-/* ============ ENTRADA ============ */
+/* ---------- ENTRADA ---------- */
 .entrada{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:28px 16px}
-.entrada-caja{width:100%;max-width:410px}
-.logo-grande{text-align:center;margin-bottom:26px}
-.logo-grande .balon{
-  width:92px;height:92px;margin:0 auto 16px;border-radius:50%;
-  background:linear-gradient(140deg,var(--verde-mx) 0 50%,var(--azul-us) 50% 100%);
-  border:3px solid var(--ambar);color:#FFF;display:grid;place-items:center;
-  font-family:'Barlow Condensed';font-size:38px;font-weight:700;
-  box-shadow:0 0 0 6px rgba(232,179,60,.14), 0 10px 30px rgba(0,0,0,.45);
-}
-.logo-grande h1{font-size:38px;font-weight:700;text-transform:uppercase;text-shadow:0 3px 0 rgba(0,0,0,.35)}
-.logo-grande p{font-size:12px;color:var(--ambar);margin-top:8px;letter-spacing:.14em;text-transform:uppercase;font-weight:600}
-.banderines{display:flex;justify-content:center;gap:8px;font-size:20px;margin-top:10px}
-.cambio{text-align:center;margin-top:18px;font-size:14px;color:var(--cal-suave)}
-.cambio button{color:var(--ambar);font-weight:600;text-decoration:underline}
+.entrada-caja{width:100%;max-width:420px}
+.marca{text-align:center;margin-bottom:24px}
+.marca svg{width:104px;height:104px;display:block;margin:0 auto 14px}
+.marca h1{font-size:31px;font-weight:700;text-transform:uppercase;letter-spacing:.01em}
+.marca .lema{font-size:11px;color:var(--oro);margin-top:9px;letter-spacing:.2em;text-transform:uppercase;font-weight:600}
+.cambio{text-align:center;margin-top:18px;font-size:14px;color:var(--suave)}
+.cambio button{color:var(--oro);font-weight:600;text-decoration:underline}
 
-/* ============ VARIOS ============ */
-.vacio{text-align:center;padding:44px 20px;color:var(--cal-suave);font-size:15px}
-.aviso{padding:12px 14px;border-radius:10px;font-size:14px;margin-top:14px;border-left:4px solid}
-.aviso.err{background:rgba(206,17,38,.16);border-color:var(--rojo-us)}
-.aviso.ok{background:rgba(0,122,77,.18);border-color:var(--verde)}
-.aviso.info{background:rgba(232,179,60,.13);border-color:var(--ambar)}
+/* ---------- SALDO ---------- */
+.monedero{background:linear-gradient(135deg,var(--panel-2),var(--panel));border:1px solid var(--linea);border-radius:18px;padding:22px;margin-top:16px;position:relative;overflow:hidden}
+.monedero::after{content:'';position:absolute;right:-40px;top:-40px;width:170px;height:170px;border-radius:50%;background:radial-gradient(circle,rgba(212,164,56,.16),transparent 70%)}
+.monedero .etq{font-size:11px;color:var(--suave);letter-spacing:.16em;text-transform:uppercase;font-weight:600}
+.monedero .cifra{font-family:'Barlow Condensed';font-size:52px;font-weight:700;color:var(--oro);line-height:1;margin:8px 0 4px;font-variant-numeric:tabular-nums}
+.monedero .sub{font-size:13px;color:var(--suave)}
+.mov{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:13px 16px;border-bottom:1px solid var(--linea)}
+.mov:last-child{border-bottom:none}
+.mov .d{font-size:14px;font-weight:600}
+.mov .f{font-size:12px;color:var(--suave);margin-top:2px}
+.mov .m{font-family:'Barlow Condensed';font-size:19px;font-weight:700;white-space:nowrap;font-variant-numeric:tabular-nums}
+.mov .m.suma{color:var(--verde)}
+.mov .m.resta{color:#F08A7E}
+.datos-pago{background:var(--fondo);border:1px dashed var(--linea);border-radius:12px;padding:14px;margin-top:12px}
+.dp{display:flex;justify-content:space-between;gap:12px;padding:7px 0;font-size:14px;border-bottom:1px solid var(--linea)}
+.dp:last-child{border-bottom:none}
+.dp span{color:var(--suave)}
+.dp b{font-weight:600;text-align:right;word-break:break-all}
+
+/* ---------- PERFIL ---------- */
+.credencial{margin-top:16px;border-radius:18px;overflow:hidden;border:1px solid var(--linea);background:var(--panel)}
+.credencial .tira{height:5px;background:linear-gradient(90deg,var(--mx) 0 18%,#F2F2F2 18% 25%,var(--rojo) 25% 42%,var(--us) 50% 68%,#F2F2F2 68% 76%,var(--rojo) 76% 100%)}
+.cred-cuerpo{display:flex;align-items:center;gap:16px;padding:20px 18px}
+.cred-av{width:72px;height:72px;flex:0 0 72px;border-radius:20px;background:var(--panel-2);display:grid;place-items:center;font-size:34px;border:1px solid var(--oro)}
+.cred-cuerpo h2{font-size:25px;font-weight:700}
+.cred-cuerpo p{font-size:13px;color:var(--suave);margin-top:5px}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:12px}
+.stat{background:var(--panel);border:1px solid var(--linea);border-radius:12px;padding:15px 8px;text-align:center}
+.stat b{display:block;font-family:'Barlow Condensed';font-size:29px;font-weight:700;color:var(--oro);line-height:1;font-variant-numeric:tabular-nums}
+.stat span{display:block;font-size:11px;color:var(--suave);margin-top:6px}
+.avatares{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+.av-op{width:48px;height:48px;border-radius:13px;border:1px solid var(--linea);background:var(--panel-2);font-size:24px;display:grid;place-items:center}
+.av-op.sel{border-color:var(--oro);background:rgba(212,164,56,.16)}
+
+/* ---------- VARIOS ---------- */
+.vacio{text-align:center;padding:42px 20px;color:var(--suave);font-size:15px}
+.aviso{padding:13px 15px;border-radius:11px;font-size:14px;margin-top:14px;border-left:3px solid;line-height:1.5}
+.aviso.err{background:rgba(192,57,43,.14);border-color:var(--rojo)}
+.aviso.ok{background:rgba(18,160,106,.14);border-color:var(--verde)}
+.aviso.info{background:rgba(212,164,56,.11);border-color:var(--oro)}
 .seccion{margin-top:26px}
-.seccion > h3{font-family:'Barlow Condensed';font-size:21px;font-weight:700;text-transform:uppercase;margin-bottom:2px}
-.seccion > p{font-size:13px;color:var(--cal-suave)}
-.tarjeta{background:rgba(19,37,57,.92);border:1px solid var(--raya);border-radius:var(--r);padding:16px;margin-top:12px;box-shadow:0 8px 26px rgba(0,0,0,.3)}
-.jrow{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:13px 16px;border-bottom:1px solid var(--raya);background:rgba(19,37,57,.92)}
+.seccion > h3{font-family:'Barlow Condensed';font-size:20px;font-weight:700;text-transform:uppercase;margin-bottom:3px}
+.seccion > p{font-size:13px;color:var(--suave)}
+.jrow{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:13px 16px;border-bottom:1px solid var(--linea)}
 .jrow:last-child{border-bottom:none}
 .jrow .t{font-weight:600;font-size:15px}
-.jrow .s{font-size:12px;color:var(--cal-suave);margin-top:2px}
-.etiqueta{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:4px 9px;border-radius:999px}
-.etiqueta.abierta{background:rgba(0,122,77,.24);color:#5EE0A0}
-.etiqueta.cerrada{background:rgba(232,179,60,.20);color:var(--ambar)}
-.etiqueta.finalizada{background:var(--raya);color:var(--cal-suave)}
-.cargando{text-align:center;padding:50px;color:var(--cal-suave)}
+.jrow .s{font-size:12px;color:var(--suave);margin-top:3px}
+.etiqueta{font-size:10px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;padding:4px 9px;border-radius:999px;white-space:nowrap}
+.etiqueta.abierta,.etiqueta.ok{background:rgba(18,160,106,.20);color:#4FD8A0}
+.etiqueta.cerrada,.etiqueta.pend{background:rgba(212,164,56,.18);color:var(--oro)}
+.etiqueta.finalizada{background:var(--linea);color:var(--suave)}
+.etiqueta.mal{background:rgba(192,57,43,.20);color:#F08A7E}
+.cargando{text-align:center;padding:50px;color:var(--suave)}
 .switch{display:flex;align-items:center;gap:9px;font-size:14px;cursor:pointer}
-.switch input{width:20px;height:20px;accent-color:var(--ambar)}
-.mini{font-size:12px;color:var(--cal-suave);margin-top:8px;line-height:1.45}
-
-.progreso{display:flex;align-items:center;gap:12px;margin-top:12px}
-.progreso .cifra{font-family:'Barlow Condensed';font-size:32px;font-weight:700;color:var(--ambar);line-height:1}
-.progreso .txt{font-size:13px;color:var(--cal-suave)}
-.barritas{display:flex;gap:3px;margin-top:8px}
-.barrita{height:7px;flex:1;border-radius:4px;background:var(--raya)}
-.barrita.on{background:var(--azul-us)}
-.barrita.mx{background:var(--verde-mx)}
-
-/* ============ PERFIL: credencial ============ */
-.perfil-cab{
-  margin-top:16px;border-radius:var(--r);overflow:hidden;border:1px solid var(--raya);
-  background:rgba(19,37,57,.92);box-shadow:0 10px 30px rgba(0,0,0,.4);
-}
-.perfil-tira{height:8px;background:linear-gradient(90deg,
-  var(--verde-mx) 0 16%, #FFF 16% 25%, var(--rojo-mx) 25% 42%,
-  var(--azul-us) 50% 62%, var(--rojo-us) 62% 74%, #FFF 74% 86%, var(--rojo-us) 86% 100%)}
-.perfil-cuerpo{display:flex;align-items:center;gap:16px;padding:20px 18px}
-.perfil-av{
-  width:76px;height:76px;flex:0 0 76px;border-radius:50%;
-  background:linear-gradient(140deg,var(--verde-mx) 0 50%,var(--azul-us) 50% 100%);
-  display:grid;place-items:center;font-size:36px;border:3px solid var(--ambar);
-  box-shadow:0 0 0 5px rgba(232,179,60,.15);
-}
-.perfil-cuerpo h2{font-size:28px;font-weight:700}
-.perfil-cuerpo p{font-size:13px;color:var(--cal-suave);margin-top:4px}
-.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px}
-.stat{background:rgba(19,37,57,.92);border:1px solid var(--raya);border-radius:var(--r);padding:15px 10px;text-align:center;position:relative;overflow:hidden}
-.stat::before{content:'';position:absolute;left:0;right:0;top:0;height:3px;background:var(--ambar)}
-.stat b{display:block;font-family:'Barlow Condensed';font-size:32px;font-weight:700;color:var(--ambar);line-height:1}
-.stat span{display:block;font-size:11px;color:var(--cal-suave);margin-top:6px;letter-spacing:.04em}
-.avatares{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
-.av-op{width:48px;height:48px;border-radius:12px;border:1.5px solid var(--raya);background:rgba(255,255,255,.04);
-  font-size:25px;display:grid;place-items:center;box-shadow:0 3px 0 rgba(0,0,0,.3);transition:transform .08s}
-.av-op:active{transform:translateY(3px);box-shadow:none}
-.av-op.sel{border-color:var(--ambar);background:linear-gradient(180deg,rgba(232,179,60,.28),rgba(232,179,60,.12));box-shadow:0 3px 0 var(--ambar-hondo)}
-
-/* ============ VERIFICACIÓN ============ */
-.ver-caja{text-align:center;padding:26px 20px}
-.ver-caja .cod{font-family:'Barlow Condensed';font-size:56px;font-weight:700;color:var(--ambar);
-  letter-spacing:.18em;line-height:1;margin:14px 0;text-shadow:0 3px 0 rgba(0,0,0,.4)}
-.lada{display:grid;grid-template-columns:120px 1fr;gap:10px}
-.chip-ver{font-size:11px;font-weight:700;letter-spacing:.06em;padding:3px 9px;border-radius:999px;background:rgba(0,122,77,.26);color:#5EE0A0;margin-left:6px}
-.chip-no{font-size:11px;font-weight:700;letter-spacing:.06em;padding:3px 9px;border-radius:999px;background:rgba(206,17,38,.24);color:#FF8A78;margin-left:6px}
+.switch input{width:19px;height:19px;accent-color:var(--oro);flex:0 0 19px}
+.mini{font-size:12px;color:var(--suave);margin-top:9px;line-height:1.5}
+.progreso{display:flex;align-items:center;gap:13px;margin-top:6px}
+.progreso .cifra{font-family:'Barlow Condensed';font-size:30px;font-weight:700;color:var(--oro);line-height:1}
+.progreso .txt{font-size:13px;color:var(--suave)}
+.barritas{display:flex;gap:3px;margin-top:9px}
+.barrita{height:6px;flex:1;border-radius:3px;background:var(--linea)}
+.barrita.on{background:var(--us)}
+.barrita.mx{background:var(--mx)}
+.ver-caja{text-align:center;padding:24px 18px}
+.ver-caja .cod{font-family:'Barlow Condensed';font-size:52px;font-weight:700;color:var(--oro);letter-spacing:.2em;line-height:1;margin:13px 0}
+.chip-ver{font-size:10px;font-weight:700;letter-spacing:.08em;padding:3px 9px;border-radius:999px;background:rgba(18,160,106,.20);color:#4FD8A0;margin-left:6px}
+.chip-no{font-size:10px;font-weight:700;letter-spacing:.08em;padding:3px 9px;border-radius:999px;background:rgba(192,57,43,.20);color:#F08A7E;margin-left:6px}
+.legal{font-size:13px;line-height:1.65;color:var(--suave);white-space:pre-wrap}
+.legal strong{color:var(--texto)}
 @media (prefers-reduced-motion:reduce){*{transition:none !important}}
 </style>
 </head>
 <body>
-<div class="velo"></div>
 
-<!-- ==================== ENTRADA ==================== -->
-<div id="entrada" class="entrada">
-  <div class="entrada-caja">
-    <div class="logo-grande">
-      <div class="balon">PA</div>
-      <h1>Quinielas<br>El Piji Achotero</h1>
-      <p>10 partidos · gana el que más acierte</p>
-      <div class="banderines">🇲🇽 ⚽ 🇺🇸</div>
-    </div>
+<div id="entrada" class="entrada"></div>
 
-    <div id="formLogin">
-      <div class="campo"><label for="lgWa">WhatsApp o usuario</label>
-        <input id="lgWa" autocomplete="username" placeholder="9181234567"></div>
-      <div class="campo"><label for="lgPin">PIN</label>
-        <input id="lgPin" type="password" inputmode="numeric" autocomplete="current-password" placeholder="••••"></div>
-      <button class="btn" onclick="entrar()">Entrar</button>
-      <div id="lgMsg"></div>
-      <p class="cambio">¿Primera vez? <button onclick="verFormulario('registro')">Crea tu perfil</button></p>
-    </div>
-
-    <div id="formRegistro" class="hide">
-      <div class="campo"><label for="rgNombre">Tu nombre</label>
-        <input id="rgNombre" placeholder="Como quieres salir en la tabla"></div>
-      <div class="campo"><label for="rgWa">WhatsApp (número real, te va a llegar la verificación)</label>
-        <div class="lada">
-          <select id="rgPais"><option value="52">🇲🇽 +52</option><option value="1">🇺🇸 +1</option></select>
-          <input id="rgWa" inputmode="tel" maxlength="14" placeholder="9181234567">
-        </div></div>
-      <div class="campo"><label for="rgPin">Crea un PIN de 4 dígitos</label>
-        <input id="rgPin" type="password" inputmode="numeric" maxlength="4" placeholder="••••"></div>
-      <div class="campo"><label>Escoge tu figura</label>
-        <div class="avatares" id="rgAvatares"></div></div>
-      <button class="btn" onclick="registrar()">Crear mi perfil</button>
-      <div id="rgMsg"></div>
-      <p class="cambio">¿Ya tienes perfil? <button onclick="verFormulario('login')">Entra aquí</button></p>
-    </div>
-  </div>
-</div>
-
-<!-- ==================== APP ==================== -->
 <div id="app" class="hide">
   <div class="barra">
+    <div class="tricolor"></div>
     <div class="barra-in">
-      <div class="escudo" id="miAvatar">⚽</div>
+      <span id="logoBarra"></span>
       <div>
         <h1>El Piji Achotero</h1>
         <small id="quienSoy">—</small>
@@ -337,18 +229,54 @@ a{color:var(--ambar)}
 
 <script>
 /* ============================================================
-   CONFIGURACIÓN — pon aquí tus llaves de Supabase
+   CONFIGURACIÓN
    ============================================================ */
 const SUPABASE_URL  = "https://xuefkdynywuajknfluzh.supabase.co";
 const SUPABASE_ANON = "sb_publishable_dF4SofCAvQ6VyDsuiFaSbw_rYcPiOx4";
-
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
 
 const META_PARTIDOS = 10;
-let WHATSAPP_ORG = '';
 const AVATARES = ['⚽','🏆','🔥','🐓','🐂','🦅','🐐','🎯','👑','🥊','🐎','⭐','💥','🌵','🧢','🍺'];
 
-/* ---------- Catálogo de equipos (Liga MX al Apertura 2026) ---------- */
+const TERMINOS_BASE = `CLÁUSULAS DE PARTICIPACIÓN
+Quinielas El Piji Achotero
+
+1. QUÉ ES ESTO
+Quinielas El Piji Achotero es un grupo privado de pronósticos deportivos entre conocidos. Cada jornada consta de 10 partidos de la Liga MX y de las ligas europeas, seleccionados por la organización.
+
+2. QUIÉN PUEDE PARTICIPAR
+Solo mayores de 18 años. Cada persona puede tener un único perfil, con un número de WhatsApp real y verificado. Los perfiles duplicados o con datos falsos se cancelan y pierden su saldo pendiente.
+
+3. COSTO Y SALDO
+Cada boleta cuesta la cantidad indicada en la jornada. Para participar debes tener saldo suficiente en tu monedero. El saldo se abona mediante depósito por Zelle o transferencia bancaria, y se acredita cuando la organización confirma el depósito. El saldo no genera intereses.
+
+4. CIERRE DE REGISTRO
+Puedes modificar tus pronósticos las veces que quieras hasta la hora de cierre indicada en cada jornada. Una vez cerrado el registro no se aceptan cambios, altas ni cancelaciones, y el costo de la boleta no es reembolsable.
+
+5. CÓMO SE GANA
+Gana quien acumule más resultados acertados de los 10 partidos. Cada acierto vale un punto. Si dos o más participantes empatan en aciertos, comparten el lugar y el premio correspondiente se divide en partes iguales entre ellos.
+
+6. RESULTADOS
+Se toma el resultado al término del tiempo reglamentario, incluido el tiempo añadido. No se consideran tiempos extra ni penales. Si un partido se pospone o se suspende, la organización puede anularlo para todos los participantes o sustituirlo, informando por el grupo antes del cierre.
+
+7. PREMIOS
+La bolsa se forma con las boletas pagadas de la jornada y se reparte según los porcentajes publicados al abrirla. Los premios se abonan al monedero del ganador al finalizar la jornada.
+
+8. RETIROS
+Puedes solicitar el retiro de tu saldo en cualquier momento. La organización lo paga por el mismo medio del depósito dentro de los días hábiles siguientes.
+
+9. CONDUCTA
+Queda prohibido compartir cuentas, crear perfiles de terceros o intentar manipular resultados. La organización puede suspender cualquier perfil que incumpla estas cláusulas.
+
+10. RESPONSABILIDAD
+La participación es voluntaria y recreativa. La organización no se hace responsable por fallas de conexión, errores de captura del participante ni retrasos de los servicios bancarios.
+
+11. CAMBIOS
+Estas cláusulas pueden actualizarse. La versión vigente siempre está disponible dentro de la app.
+
+Al crear tu perfil aceptas estas cláusulas.`;
+
+/* ---------- Ligas ---------- */
 const LIGAS = {
   'Liga MX': ['América','Atlante','Atlas','Atlético San Luis','Cruz Azul','Chivas','Juárez','León','Monterrey','Necaxa','Pachuca','Puebla','Pumas','Querétaro','Santos Laguna','Tigres','Tijuana','Toluca'],
   'Premier League': ['Arsenal','Aston Villa','Bournemouth','Brentford','Brighton','Chelsea','Crystal Palace','Everton','Fulham','Liverpool','Manchester City','Manchester United','Newcastle','Nottingham Forest','Tottenham','West Ham','Wolverhampton'],
@@ -361,15 +289,40 @@ const LIGAS = {
 };
 LIGAS['Champions League'] = [...new Set([...LIGAS['Premier League'],...LIGAS['LaLiga'],...LIGAS['Serie A'],...LIGAS['Bundesliga'],...LIGAS['Ligue 1']])].sort();
 const ORDEN_LIGAS = Object.keys(LIGAS);
-const abrevia = l => ({'Liga MX':'MX','Premier League':'PREMIER','LaLiga':'LALIGA','Serie A':'SERIE A','Bundesliga':'BUNDES','Ligue 1':'LIGUE 1','Champions League':'CHAMPIONS'}[l] || (l||'OTRA').toUpperCase());
+const abrevia = l => ({'Liga MX':'LIGA MX','Premier League':'PREMIER LEAGUE','LaLiga':'LALIGA','Serie A':'SERIE A','Bundesliga':'BUNDESLIGA','Ligue 1':'LIGUE 1','Champions League':'CHAMPIONS LEAGUE'}[l] || (l||'OTRA').toUpperCase());
+
+/* ---------- Logo ---------- */
+function LOGO(size){
+  return `<svg viewBox="0 0 120 120" width="${size}" height="${size}" role="img" aria-label="Escudo El Piji Achotero">
+  <defs>
+    <clipPath id="lgEsc"><path d="M60 6 108 22v40c0 27-20 44-48 52C32 106 12 89 12 62V22Z"/></clipPath>
+    <linearGradient id="lgOro" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#E8C46A"/><stop offset="1" stop-color="#B08A22"/>
+    </linearGradient>
+  </defs>
+  <g clip-path="url(#lgEsc)">
+    <rect x="0" y="0" width="60" height="120" fill="#0E7A4F"/>
+    <rect x="60" y="0" width="60" height="120" fill="#1D4E89"/>
+    <g fill="#EDF0F5" opacity=".16">
+      <rect x="60" y="10" width="60" height="7"/><rect x="60" y="26" width="60" height="7"/>
+      <rect x="60" y="42" width="60" height="7"/><rect x="60" y="58" width="60" height="7"/>
+      <rect x="60" y="74" width="60" height="7"/><rect x="60" y="90" width="60" height="7"/>
+    </g>
+    <rect x="55" y="0" width="10" height="120" fill="#0B1220" opacity=".55"/>
+  </g>
+  <path d="M60 6 108 22v40c0 27-20 44-48 52C32 106 12 89 12 62V22Z" fill="none" stroke="url(#lgOro)" stroke-width="5"/>
+  <circle cx="60" cy="55" r="20" fill="#EDF0F5"/>
+  <path d="M60 41l7.5 5.4-2.9 8.8h-9.2l-2.9-8.8Z" fill="#0B1220"/>
+  <path d="M60 75c-5.6 0-10.6-2.6-13.9-6.6l4.6-5.6 8 3.4 8-3.4 4.6 5.6C70.6 72.4 65.6 75 60 75Z" fill="#0B1220" opacity=".82"/>
+  <text x="60" y="96" text-anchor="middle" font-family="Barlow Condensed,sans-serif" font-size="15" font-weight="700" fill="url(#lgOro)" letter-spacing="2">PIJI</text>
+</svg>`;
+}
 
 /* ---------- Estado ---------- */
-let yo = null, tab = 'boleta';
-let datos = { jornadas:[], jornada:null, partidos:[], boletos:[], pronosticos:[], usuarios:[] };
-let borrador = {}, jornadaVista = null, cuenta = null, ligaSel = 'Liga MX';
-let avatarNuevo = '⚽';
-let porVerificar = null;   // usuario recién creado, esperando verificación
-let historial = null;   // estadísticas del perfil
+let yo = null, tab = 'boleta', cuenta = null, ligaSel = 'Liga MX';
+let CFG = {};
+let datos = { jornadas:[], jornada:null, partidos:[], boletos:[], pronosticos:[], usuarios:[], depositos:[], retiros:[], movimientos:[] };
+let borrador = {}, jornadaVista = null, avatarNuevo = '⚽', historial = null, aceptoTerm = false;
 
 /* ---------- Utilidades ---------- */
 const $ = id => document.getElementById(id);
@@ -379,25 +332,83 @@ const lee    = k =>{ try{ return localStorage.getItem(k) }catch(e){ return (wind
 const borra  = k =>{ try{ localStorage.removeItem(k) }catch(e){ if(window.__m) delete window.__m[k] } };
 const dinero = n => '$' + Number(n||0).toFixed(2);
 const fechaMX = d => new Date(d).toLocaleString('es-MX',{weekday:'short',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
+const fechaCorta = d => new Date(d).toLocaleDateString('es-MX',{day:'2-digit',month:'short'});
 const soloD = s => String(s||'').replace(/\D/g,'');
 const d10 = s => soloD(s).slice(-10);
-const bonito = w => { const d = d10(w); return d.length===10 ? `${d.slice(0,3)} ${d.slice(3,6)} ${d.slice(6)}` : w; };
+const bonito = w => { const d = d10(w); return /^\d+$/.test(soloD(w)) && d.length===10 ? `${d.slice(0,3)} ${d.slice(3,6)} ${d.slice(6)}` : w; };
 const nuevoCodigo = () => String(Math.floor(1000 + Math.random()*9000));
-
 function aviso(el, texto, tipo='err'){ const e=$(el); if(e) e.innerHTML = texto ? `<div class="aviso ${tipo}">${esc(texto)}</div>` : ''; }
 
+const esDueno   = () => yo?.rol === 'admin';
+const esStaff   = () => ['admin','organizador'].includes(yo?.rol);
+const esJugador = u => !['admin','organizador'].includes(u.rol);
+const tituloRol = r => r === 'admin' ? 'Dueño' : (r === 'organizador' ? 'Organizador' : '');
+const terminos  = () => (CFG.terminos && CFG.terminos.trim()) ? CFG.terminos : TERMINOS_BASE;
+
 /* ============================================================
-   ENTRADA Y REGISTRO
+   PANTALLAS DE ENTRADA
    ============================================================ */
-function verFormulario(cual){
-  $('formLogin').classList.toggle('hide', cual !== 'login');
-  $('formRegistro').classList.toggle('hide', cual !== 'registro');
-  if(cual === 'registro') pintarAvatares();
+function pantallaLogin(){
+  $('entrada').innerHTML = `
+  <div class="entrada-caja">
+    <div class="marca">
+      ${LOGO(104)}
+      <h1>Quinielas<br>El Piji Achotero</h1>
+      <div class="lema">10 partidos · gana quien más acierte</div>
+    </div>
+    <div class="campo"><label for="lgWa">WhatsApp o usuario</label>
+      <input id="lgWa" autocomplete="username" placeholder="9181234567"></div>
+    <div class="campo"><label for="lgPin">PIN</label>
+      <input id="lgPin" type="password" inputmode="numeric" autocomplete="current-password" placeholder="••••"></div>
+    <button class="btn" onclick="entrar()">Entrar</button>
+    <div id="lgMsg"></div>
+    <p class="cambio">¿Primera vez? <button onclick="pantallaRegistro()">Crea tu perfil</button></p>
+    <p class="cambio"><button onclick="pantallaTerminos('login')">Ver cláusulas de participación</button></p>
+  </div>`;
+}
+
+function pantallaRegistro(){
+  $('entrada').innerHTML = `
+  <div class="entrada-caja">
+    <div class="marca">
+      ${LOGO(80)}
+      <h1>Crea tu perfil</h1>
+      <div class="lema">Es gratis · pagas solo al entrar a una jornada</div>
+    </div>
+    <div class="campo"><label for="rgNombre">Tu nombre</label>
+      <input id="rgNombre" placeholder="Como quieres salir en la tabla"></div>
+    <div class="campo"><label for="rgWa">WhatsApp real, se verifica</label>
+      <div class="lada">
+        <select id="rgPais"><option value="52">🇲🇽 +52</option><option value="1">🇺🇸 +1</option></select>
+        <input id="rgWa" inputmode="tel" maxlength="14" placeholder="9181234567">
+      </div></div>
+    <div class="campo"><label for="rgPin">Crea un PIN de 4 dígitos</label>
+      <input id="rgPin" type="password" inputmode="numeric" maxlength="4" placeholder="••••"></div>
+    <div class="campo"><label>Escoge tu figura</label>
+      <div class="avatares" id="rgAvatares"></div></div>
+    <label class="switch" style="margin-top:16px">
+      <input type="checkbox" id="rgTerm" ${aceptoTerm?'checked':''} onchange="aceptoTerm=this.checked">
+      <span>Acepto las <button style="color:var(--oro);text-decoration:underline" onclick="event.preventDefault();pantallaTerminos('registro')">cláusulas de participación</button> y declaro ser mayor de edad.</span>
+    </label>
+    <button class="btn" onclick="registrar()">Crear mi perfil</button>
+    <div id="rgMsg"></div>
+    <p class="cambio">¿Ya tienes perfil? <button onclick="pantallaLogin()">Entra aquí</button></p>
+  </div>`;
+  pintarAvatares();
+}
+
+function pantallaTerminos(volverA){
+  $('entrada').innerHTML = `
+  <div class="entrada-caja" style="max-width:560px">
+    <div class="marca">${LOGO(64)}<h1>Cláusulas</h1></div>
+    <div class="card"><div class="card-cuerpo"><div class="legal">${esc(terminos())}</div></div></div>
+    <button class="btn" onclick="${volverA==='registro'?'pantallaRegistro()':'pantallaLogin()'}">Volver</button>
+  </div>`;
 }
 
 function pintarAvatares(){
-  $('rgAvatares').innerHTML = AVATARES.map(a =>
-    `<button type="button" class="av-op ${a===avatarNuevo?'sel':''}" onclick="elegirAvatar('${a}')">${a}</button>`).join('');
+  const c = $('rgAvatares'); if(!c) return;
+  c.innerHTML = AVATARES.map(a => `<button type="button" class="av-op ${a===avatarNuevo?'sel':''}" onclick="elegirAvatar('${a}')">${a}</button>`).join('');
 }
 function elegirAvatar(a){ avatarNuevo = a; pintarAvatares(); }
 
@@ -411,54 +422,45 @@ async function registrar(){
   if(num.length !== 10) return aviso('rgMsg','El número debe tener 10 dígitos, sin lada de país.');
   if(/^(\d)\1{9}$/.test(num)) return aviso('rgMsg','Ese número no es real. Pon tu WhatsApp de verdad.');
   if(pais === '52' && num[0] === '0') return aviso('rgMsg','Un número de México no empieza con 0.');
-  if(pin.length !== 4)  return aviso('rgMsg','El PIN debe tener 4 dígitos.');
+  if(pin.length !== 4) return aviso('rgMsg','El PIN debe tener 4 dígitos.');
+  if(!$('rgTerm').checked) return aviso('rgMsg','Tienes que aceptar las cláusulas para participar.');
 
-  const completo = pais + num;
   const { data:existe } = await sb.from('usuarios').select('id').ilike('whatsapp','%'+num).maybeSingle();
   if(existe) return aviso('rgMsg','Ese WhatsApp ya tiene perfil. Entra con tu PIN.');
 
-  const codigo = nuevoCodigo();
   const { data, error } = await sb.from('usuarios').insert({
-    nombre, whatsapp:completo, pais, pin, rol:'jugador',
-    avatar:avatarNuevo, verificado:false, codigo_verif:codigo
+    nombre, whatsapp: pais + num, pais, pin, rol:'jugador',
+    avatar:avatarNuevo, verificado:false, codigo_verif:nuevoCodigo(), saldo:0
   }).select().single();
   if(error) return aviso('rgMsg','No se pudo crear el perfil: ' + error.message);
 
   await traerConfig();
-  porVerificar = data;
-  pantallaVerificar();
+  pantallaVerificar(data);
 }
 
-function pantallaVerificar(){
-  const u = porVerificar;
+function pantallaVerificar(u){
   const texto = `Soy ${u.nombre}. Mi código para las QUINIELAS EL PIJI ACHOTERO es ${u.codigo_verif}`;
-  const link = WHATSAPP_ORG
-    ? `https://wa.me/${WHATSAPP_ORG}?text=${encodeURIComponent(texto)}`
-    : `https://wa.me/?text=${encodeURIComponent(texto)}`;
-
+  const link = CFG.whatsapp_org ? `https://wa.me/${CFG.whatsapp_org}?text=${encodeURIComponent(texto)}`
+                                : `https://wa.me/?text=${encodeURIComponent(texto)}`;
   $('entrada').innerHTML = `
   <div class="entrada-caja">
-    <div class="logo-grande">
-      <div class="balon">${u.avatar||'⚽'}</div>
-      <h1>Verifica tu<br>WhatsApp</h1>
-      <p>${bonito(u.whatsapp)}</p>
-    </div>
-    <div class="tarjeta ver-caja">
-      <span style="font-size:13px;color:var(--cal-suave)">Tu código</span>
+    <div class="marca">${LOGO(80)}<h1>Verifica tu<br>WhatsApp</h1>
+      <div class="lema">${bonito(u.whatsapp)}</div></div>
+    <div class="card"><div class="card-cuerpo ver-caja">
+      <span style="font-size:12px;color:var(--suave);letter-spacing:.14em;text-transform:uppercase">Tu código</span>
       <div class="cod">${u.codigo_verif}</div>
-      <p style="font-size:14px;color:var(--cal-suave)">Mándalo por WhatsApp al organizador desde este mismo teléfono. En cuanto lo apruebe, tu perfil queda activo.</p>
-      <button class="btn" onclick="window.open('${link}','_blank')">Mandar código por WhatsApp</button>
-      <button class="btn fantasma" onclick="location.reload()">Ya lo mandé, entrar</button>
-    </div>
-    <p class="cambio">Tu perfil ya quedó guardado. Puedes entrar con tu número y PIN, pero no cuenta tu boleta hasta que te verifiquen.</p>
+      <p style="font-size:14px;color:var(--suave)">Mándalo por WhatsApp a la organización desde este mismo teléfono. En cuanto lo confirmen, tu perfil queda activo.</p>
+      <button class="btn" onclick="window.open('${link}','_blank')">Mandar mi código</button>
+      <button class="btn fantasma" onclick="pantallaLogin()">Ya lo mandé, entrar</button>
+    </div></div>
   </div>`;
 }
 
 async function entrar(){
-  const wa  = $('lgWa').value.trim(), pin = $('lgPin').value.trim();
+  const wa = $('lgWa').value.trim(), pin = $('lgPin').value.trim();
   if(!wa || !pin) return aviso('lgMsg','Faltan tus datos.');
   let data = null;
-  if(/\d/.test(wa)){
+  if(/^\d/.test(wa)){
     const r = await sb.from('usuarios').select('*').ilike('whatsapp','%'+d10(wa));
     data = (r.data || [])[0] || null;
   } else {
@@ -467,7 +469,7 @@ async function entrar(){
   }
   if(!data)            return aviso('lgMsg','No encontramos ese perfil.');
   if(data.pin !== pin) return aviso('lgMsg','PIN incorrecto.');
-  if(!data.activo)     return aviso('lgMsg','Tu perfil está suspendido. Habla con el organizador.');
+  if(!data.activo)     return aviso('lgMsg','Tu perfil está suspendido. Habla con la organización.');
   iniciarSesion(data);
 }
 
@@ -476,9 +478,9 @@ function iniciarSesion(u){
   guarda('piji_uid', u.id);
   $('entrada').classList.add('hide');
   $('app').classList.remove('hide');
-  $('miAvatar').textContent = u.avatar || '⚽';
-  const et = u.rol === 'admin' ? 'Dueño · ' : (u.rol === 'organizador' ? 'Organizador · ' : '');
-  $('quienSoy').textContent = et + u.nombre;
+  $('logoBarra').innerHTML = LOGO(38);
+  const et = tituloRol(u.rol);
+  $('quienSoy').textContent = (et ? et + ' · ' : '') + u.nombre;
   armarTabs(); cargar(); suscribir();
 }
 
@@ -486,21 +488,26 @@ function salir(){ borra('piji_uid'); location.reload(); }
 
 async function sesionGuardada(){
   const id = lee('piji_uid');
-  if(!id) return;
+  if(!id){ pantallaLogin(); return; }
   const { data } = await sb.from('usuarios').select('*').eq('id', id).maybeSingle();
-  if(data && data.activo) iniciarSesion(data); else borra('piji_uid');
+  if(data && data.activo) iniciarSesion(data);
+  else { borra('piji_uid'); pantallaLogin(); }
 }
 
 /* ============================================================
    CARGA
    ============================================================ */
 async function traerConfig(){
-  const { data } = await sb.from('config').select('*').eq('clave','whatsapp_org').maybeSingle();
-  WHATSAPP_ORG = data?.valor || '';
+  const { data } = await sb.from('config').select('*');
+  CFG = {}; (data||[]).forEach(r => CFG[r.clave] = r.valor || '');
 }
 
 async function cargar(){
   await traerConfig();
+
+  const { data:me } = await sb.from('usuarios').select('*').eq('id', yo.id).maybeSingle();
+  if(me) yo = me;
+
   const { data:jornadas } = await sb.from('jornadas').select('*').order('created_at',{ascending:false});
   datos.jornadas = jornadas || [];
   if(!jornadaVista || !datos.jornadas.some(j => j.id === jornadaVista)){
@@ -509,7 +516,7 @@ async function cargar(){
   }
   datos.jornada = datos.jornadas.find(j => j.id === jornadaVista) || null;
 
-  const { data:us } = await sb.from('usuarios').select('id,nombre,whatsapp,rol,activo,avatar,verificado,codigo_verif');
+  const { data:us } = await sb.from('usuarios').select('id,nombre,whatsapp,rol,activo,avatar,verificado,codigo_verif,saldo,pais');
   datos.usuarios = us || [];
 
   if(datos.jornada){
@@ -525,6 +532,25 @@ async function cargar(){
     borrador = {};
     if(mio) datos.pronosticos.filter(x => x.boleto_id === mio.id).forEach(x => borrador[x.partido_id] = x.pick);
   } else { datos.partidos = []; datos.boletos = []; datos.pronosticos = []; }
+
+  const mv = await sb.from('movimientos').select('*').eq('usuario_id', yo.id).order('created_at',{ascending:false}).limit(40);
+  datos.movimientos = mv.data || [];
+
+  if(esStaff()){
+    const [dp, rt] = await Promise.all([
+      sb.from('depositos').select('*').order('created_at',{ascending:false}).limit(60),
+      sb.from('retiros').select('*').order('created_at',{ascending:false}).limit(60)
+    ]);
+    datos.depositos = dp.data || [];
+    datos.retiros   = rt.data || [];
+  } else {
+    const [dp, rt] = await Promise.all([
+      sb.from('depositos').select('*').eq('usuario_id', yo.id).order('created_at',{ascending:false}).limit(20),
+      sb.from('retiros').select('*').eq('usuario_id', yo.id).order('created_at',{ascending:false}).limit(20)
+    ]);
+    datos.depositos = dp.data || [];
+    datos.retiros   = rt.data || [];
+  }
   pintar();
 }
 
@@ -533,16 +559,12 @@ function suscribir(){
 }
 
 /* ---------- Cálculos ---------- */
-const miBoleto = () => datos.boletos.find(b => b.usuario_id === yo?.id);
+const miBoleto  = () => datos.boletos.find(b => b.usuario_id === yo?.id);
 const usuarioDe = id => datos.usuarios.find(u => u.id === id) || {};
-const nombreDe = id => usuarioDe(id).nombre || 'Jugador';
-const avatarDe = id => usuarioDe(id).avatar || '⚽';
-const waDe     = id => usuarioDe(id).whatsapp || '';
-const verifDe  = id => !!usuarioDe(id).verificado;
-const esDueno  = () => yo?.rol === 'admin';
-const esStaff  = () => ['admin','organizador'].includes(yo?.rol);
-const esJugador= u => !['admin','organizador'].includes(u.rol);
-const tituloRol= r => r === 'admin' ? 'Dueño' : (r === 'organizador' ? 'Organizador' : '');
+const nombreDe  = id => usuarioDe(id).nombre || 'Jugador';
+const avatarDe  = id => usuarioDe(id).avatar || '⚽';
+const waDe      = id => usuarioDe(id).whatsapp || '';
+const verifDe   = id => !!usuarioDe(id).verificado;
 
 function puntosDe(boletoId){
   let pts = 0;
@@ -552,13 +574,9 @@ function puntosDe(boletoId){
   });
   return pts;
 }
+const bolsa = () => datos.jornada ? datos.boletos.filter(b => b.pagado).length * Number(datos.jornada.costo) : 0;
+const listaJornada = () => datos.partidos.length >= META_PARTIDOS;
 
-function bolsa(){
-  const j = datos.jornada; if(!j) return 0;
-  return datos.boletos.filter(b => b.pagado).length * Number(j.costo);
-}
-
-/* Gana el que más aciertos tenga. Empate en aciertos = mismo lugar y premio dividido. */
 function tablaPosiciones(){
   const j = datos.jornada;
   const lista = datos.boletos.map(b => ({ ...b, nombre:nombreDe(b.usuario_id), avatar:avatarDe(b.usuario_id), verif:verifDe(b.usuario_id), puntos:puntosDe(b.id) }))
@@ -569,7 +587,7 @@ function tablaPosiciones(){
   lista.forEach(f => {
     const emp = lista.filter(x => x.lugar === f.lugar).length;
     const pct = pcts[f.lugar - 1] || 0;
-    f.premio = (j?.estado === 'finalizada' && pct) ? (total * pct / 100) / emp : 0;
+    f.premio = pct ? (total * pct / 100) / emp : 0;
   });
   return lista;
 }
@@ -587,12 +605,17 @@ function porLiga(lista){
 }
 
 /* ============================================================
-   PINTADO
+   NAVEGACIÓN
    ============================================================ */
 function armarTabs(){
-  const t = [['boleta','Boleta'],['tabla','Tabla'],['perfil','Perfil']];
-  if(esStaff()) t.push(['admin','Organizar']);
-  $('tabs').innerHTML = t.map(([k,n]) => `<button class="tab ${tab===k?'on':''}" onclick="irA('${k}')">${n}</button>`).join('');
+  const pendDep = datos.depositos.filter(d => d.estado === 'pendiente').length;
+  const pendVer = datos.usuarios.filter(u => esJugador(u) && !u.verificado).length;
+  const pendRet = datos.retiros.filter(r => r.estado === 'pendiente').length;
+  const alerta  = esStaff() && (pendDep + pendVer + pendRet) > 0;
+  const t = [['boleta','Boleta'],['tabla','Tabla'],['saldo','Saldo'],['perfil','Perfil']];
+  if(esStaff()) t.push(['admin','Panel']);
+  $('tabs').innerHTML = t.map(([k,n]) =>
+    `<button class="tab ${tab===k?'on':''}" onclick="irA('${k}')">${n}${k==='admin'&&alerta?'<span class="punto"></span>':''}</button>`).join('');
 }
 function irA(k){ tab = k; armarTabs(); pintar(); if(k === 'perfil' && !historial) cargarHistorial(); }
 
@@ -601,9 +624,10 @@ function pintar(){
   const v = $('vista');
   if(tab === 'boleta') v.innerHTML = vistaBoleta();
   if(tab === 'tabla')  v.innerHTML = vistaTabla();
+  if(tab === 'saldo')  v.innerHTML = vistaSaldo();
   if(tab === 'perfil') v.innerHTML = vistaPerfil();
   if(tab === 'admin'){ v.innerHTML = vistaAdmin(); refrescarEquipos(); }
-  arrancarReloj();
+  armarTabs(); arrancarReloj();
 }
 
 function arrancarReloj(){
@@ -612,43 +636,44 @@ function arrancarReloj(){
   const limite = new Date(el.dataset.reloj).getTime();
   const tick = () => {
     const falta = limite - Date.now();
-    if(falta <= 0){ el.innerHTML = '<span class="num">CERRADA</span>'; clearInterval(cuenta); return; }
+    if(falta <= 0){ el.innerHTML = '<span class="num">REGISTRO CERRADO</span>'; clearInterval(cuenta); return; }
     const d=Math.floor(falta/86400000), h=Math.floor(falta/3600000)%24, m=Math.floor(falta/60000)%60, s=Math.floor(falta/1000)%60;
     el.innerHTML = (d?`<span class="num">${d}</span><span class="etq">d</span>`:'')
       + `<span class="num">${String(h).padStart(2,'0')}</span><span class="etq">h</span>`
       + `<span class="num">${String(m).padStart(2,'0')}</span><span class="etq">m</span>`
       + `<span class="num">${String(s).padStart(2,'0')}</span><span class="etq">s</span>`
-      + `<span class="etq">para cerrar</span>`;
+      + `<span class="etq">para el cierre</span>`;
   };
   tick(); cuenta = setInterval(tick, 1000);
 }
 
 function cabecera(){
   const j = datos.jornada;
-  const pagados = datos.boletos.filter(b => b.pagado).length;
   const mx = datos.partidos.filter(p => p.liga === 'Liga MX').length;
   const eu = datos.partidos.length - mx;
   return `
   <div class="marcador">
     <div class="marcador-top">
       <h2>${esc(j.nombre)}</h2>
-      <p>${datos.partidos.length} partidos${mx?` · ${mx} de Liga MX`:''}${eu?` · ${eu} de Europa`:''} · ${dinero(j.costo)} ${esc(j.moneda)} la boleta</p>
+      <p>${datos.partidos.length} partidos${mx?` · ${mx} Liga MX`:''}${eu?` · ${eu} Europa`:''} · ${dinero(j.costo)} ${esc(j.moneda)} por boleta</p>
     </div>
     ${j.estado === 'abierta'
       ? `<div class="reloj" data-reloj="${j.fecha_limite}"></div>`
       : `<div class="reloj"><span class="num">${j.estado === 'cerrada' ? 'EN JUEGO' : 'FINALIZADA'}</span></div>`}
     <div class="bolsa">
-      <span>Bolsa acumulada<br>${datos.boletos.length} boletas · ${pagados} pagadas</span>
+      <span>Bolsa acumulada<br>${datos.boletos.length} ${datos.boletos.length===1?'boleta':'boletas'} en juego</span>
       <b>${dinero(bolsa())}</b>
     </div>
   </div>`;
 }
 
-/* ---------- BOLETA ---------- */
+/* ============================================================
+   BOLETA
+   ============================================================ */
 function vistaBoleta(){
   const j = datos.jornada;
-  if(!j) return `<div class="vacio">Todavía no hay ninguna quiniela abierta.<br>Espera a que el organizador publique la próxima jornada.</div>`;
-  if(!datos.partidos.length) return cabecera() + `<div class="vacio">Esta jornada aún no tiene partidos cargados.</div>`;
+  if(!j) return `<div class="card"><div class="vacio">No hay ninguna jornada publicada todavía.<br>Espera el aviso de la organización.</div></div>`;
+  if(!listaJornada()) return cabecera() + `<div class="aviso info">Esta jornada está en preparación. Se abre cuando la organización cargue los ${META_PARTIDOS} partidos.</div>`;
 
   const mio = miBoleto();
   const editable = j.estado === 'abierta' && new Date(j.fecha_limite) > new Date();
@@ -665,7 +690,7 @@ function vistaBoleta(){
         if(p.resultado && sel === v) cls += p.resultado === v ? ' acierto' : ' fallo';
         return `<button class="${cls}" ${editable?'':'disabled'} onclick="marcar('${p.id}','${v}')">${v}</button>`;
       };
-      const nres = {L:'Ganó local', E:'Empate', V:'Ganó visita'}[p.resultado];
+      const nres = {L:'Ganó local', E:'Empate', V:'Ganó visitante'}[p.resultado];
       return `
       <div class="filap">
         <div class="equipos">
@@ -682,36 +707,34 @@ function vistaBoleta(){
   let pie = '';
   if(editable){
     const faltan = datos.partidos.length - Object.keys(borrador).length;
+    const sinSaldo = !mio && Number(yo.saldo) < Number(j.costo);
     pie = `
-      <button class="btn" onclick="guardarBoleta()" ${faltan?'disabled':''}>
-        ${faltan ? `Te faltan ${faltan} partidos` : (mio ? 'Actualizar mi boleta' : 'Guardar mi boleta')}
+      ${!yo.verificado ? bannerVerificar() : ''}
+      ${sinSaldo ? `<div class="aviso err">Tu saldo es ${dinero(yo.saldo)} y la boleta cuesta ${dinero(j.costo)}. Deposita para poder entrar.
+        <button class="btn chico" style="margin-top:10px" onclick="irA('saldo')">Ir a depositar</button></div>` : ''}
+      <button class="btn" onclick="guardarBoleta()" ${(faltan || sinSaldo || !yo.verificado)?'disabled':''}>
+        ${faltan ? `Te faltan ${faltan} ${faltan===1?'partido':'partidos'}` : (mio ? 'Actualizar mi boleta' : `Pagar ${dinero(j.costo)} y registrar`)}
       </button>
       <div id="bolMsg"></div>
-      ${!yo.verificado ? bannerVerificar() : ''}
-      ${mio && !mio.pagado ? `<div class="aviso info">Tu boleta está registrada pero aún no aparece como pagada. Manda tus ${dinero(j.costo)} al organizador para entrar al reparto.</div>` : ''}
-      <p class="mini">Gana el que más aciertos junte. Puedes cambiar tus pronósticos hasta que cierre el reloj.</p>`;
+      <p class="mini">${mio ? 'Tu boleta ya está pagada. Puedes cambiar pronósticos hasta el cierre sin costo extra.' : 'Al registrar se descuenta el costo de tu saldo. No hay reembolso después del cierre.'}</p>`;
   } else if(mio){
     pie = `<div class="aviso ${jugados?'ok':'info'}">Llevas ${puntos} ${puntos===1?'acierto':'aciertos'} de ${jugados} ${jugados===1?'partido jugado':'partidos jugados'}.</div>`;
   } else {
-    pie = `<div class="aviso err">El registro ya cerró y no alcanzaste a mandar boleta esta jornada.</div>`;
+    pie = `<div class="aviso err">El registro ya cerró y no alcanzaste a entrar esta jornada.</div>`;
   }
 
   return cabecera() + `
-    <div class="boleta">
-      <div class="boleta-cab"><h3>${mio?'Mi boleta':'Llena tu boleta'}</h3><em>L · empate · V</em></div>
+    <div class="card">
+      <div class="card-cab"><h3>${mio?'Mi boleta':'Llena tu boleta'}</h3><em>local · empate · visitante</em></div>
       ${cuerpo}
     </div>${pie}`;
 }
 
 function bannerVerificar(){
   const texto = `Soy ${yo.nombre}. Mi código para las QUINIELAS EL PIJI ACHOTERO es ${yo.codigo_verif||''}`;
-  const link = WHATSAPP_ORG ? `https://wa.me/${WHATSAPP_ORG}?text=${encodeURIComponent(texto)}`
-                            : `https://wa.me/?text=${encodeURIComponent(texto)}`;
-  return `<div class="aviso err">
-    Tu WhatsApp todavía no está verificado, así que tu boleta no cuenta.
-    Manda tu código <b>${esc(yo.codigo_verif||'')}</b> al organizador.
-    <button class="btn chico" style="margin-top:10px" onclick="window.open('${link}','_blank')">Mandar mi código</button>
-  </div>`;
+  const link = CFG.whatsapp_org ? `https://wa.me/${CFG.whatsapp_org}?text=${encodeURIComponent(texto)}` : `https://wa.me/?text=${encodeURIComponent(texto)}`;
+  return `<div class="aviso err">Tu WhatsApp no está verificado, así que todavía no puedes registrar boleta. Manda tu código <b>${esc(yo.codigo_verif||'')}</b> a la organización.
+    <button class="btn chico" style="margin-top:10px" onclick="window.open('${link}','_blank')">Mandar mi código</button></div>`;
 }
 
 function marcar(id, v){ borrador[id] = v; pintar(); }
@@ -719,41 +742,60 @@ function marcar(id, v){ borrador[id] = v; pintar(); }
 async function guardarBoleta(){
   const j = datos.jornada;
   if(new Date(j.fecha_limite) <= new Date()){ await cargar(); return aviso('bolMsg','El registro acaba de cerrar.'); }
+  if(!yo.verificado) return aviso('bolMsg','Primero verifica tu WhatsApp.');
+
   let boleto = miBoleto();
+
   if(!boleto){
-    const { data, error } = await sb.from('boletos').insert({ jornada_id:j.id, usuario_id:yo.id, alias:yo.nombre }).select().single();
-    if(error) return aviso('bolMsg','No se pudo guardar: ' + error.message);
+    const costo = Number(j.costo);
+    const { data:fresco } = await sb.from('usuarios').select('saldo').eq('id', yo.id).single();
+    if(Number(fresco.saldo) < costo) { await cargar(); return aviso('bolMsg','Saldo insuficiente. Deposita para entrar.'); }
+
+    const { data, error } = await sb.from('boletos')
+      .insert({ jornada_id:j.id, usuario_id:yo.id, alias:yo.nombre, pagado:true }).select().single();
+    if(error) return aviso('bolMsg','No se pudo registrar: ' + error.message);
     boleto = data;
+
+    await sb.from('usuarios').update({ saldo: Number(fresco.saldo) - costo }).eq('id', yo.id);
+    await sb.from('movimientos').insert({
+      usuario_id:yo.id, tipo:'cargo', monto:-costo,
+      concepto:`Boleta ${j.nombre}`, jornada_id:j.id, creado_por:yo.id
+    });
   }
+
   const filas = Object.entries(borrador).map(([partido_id, pick]) => ({ boleto_id:boleto.id, partido_id, pick }));
   const { error } = await sb.from('pronosticos').upsert(filas, { onConflict:'boleto_id,partido_id' });
   if(error) return aviso('bolMsg','No se pudieron guardar los pronósticos: ' + error.message);
+
   historial = null;
   await cargar();
-  aviso('bolMsg','Boleta guardada. Mucha suerte.','ok');
+  aviso('bolMsg','Boleta registrada. Mucha suerte.','ok');
 }
 
-/* ---------- TABLA ---------- */
+/* ============================================================
+   TABLA
+   ============================================================ */
 function vistaTabla(){
   const j = datos.jornada;
-  if(!j) return `<div class="vacio">No hay jornada que mostrar.</div>`;
+  if(!j) return `<div class="card"><div class="vacio">No hay jornada que mostrar.</div></div>`;
   const lista = tablaPosiciones();
-  if(!lista.length) return cabecera() + `<div class="vacio">Nadie ha mandado boleta todavía. Sé el primero.</div>`;
+  if(!lista.length) return cabecera() + `<div class="card"><div class="vacio">Nadie ha registrado boleta todavía.</div></div>`;
   const jugados = datos.partidos.filter(p => p.resultado).length;
+  const final = j.estado === 'finalizada';
   const filas = lista.map(f => `
     <div class="pos ${f.lugar===1?'p1':''}">
       <div class="lug">${f.lugar}</div>
       <div class="av">${f.avatar}</div>
-      <div class="nom">${esc(f.nombre)}${f.usuario_id===yo.id?' · tú':''}${!f.verif?'<small class="deuda">Sin verificar</small>':(!f.pagado?'<small class="deuda">Sin pagar</small>':'')}</div>
+      <div class="nom">${esc(f.nombre)}${f.usuario_id===yo.id?' · tú':''}${!f.verif?'<small class="rojo">Sin verificar</small>':''}</div>
       <div class="pts">${f.puntos}</div>
       <div class="prem">${f.premio?dinero(f.premio):''}</div>
     </div>`).join('');
   return cabecera() + `
-    <div class="tabla">
-      <div class="tabla-cab">Posiciones · ${jugados} de ${datos.partidos.length} partidos jugados</div>
+    <div class="card">
+      <div class="card-cab"><h3>Posiciones</h3><em>${jugados} de ${datos.partidos.length} jugados</em></div>
       ${filas}
     </div>
-    <p class="mini">Gana el que tenga más aciertos. Si dos quedan iguales, se dividen el premio de ese lugar.</p>
+    <p class="mini">Gana quien acumule más aciertos. Si hay empate, el premio de ese lugar se divide en partes iguales.${final?' Los premios ya fueron abonados a los monederos.':''}</p>
     <button class="btn fantasma" onclick="compartirTabla()">Compartir por WhatsApp</button>`;
 }
 
@@ -762,9 +804,129 @@ function compartirTabla(){
   const jugados = datos.partidos.filter(p => p.resultado).length;
   let t = `*QUINIELAS EL PIJI ACHOTERO*\n${j.nombre}\n`;
   t += `Bolsa: ${dinero(bolsa())} · ${jugados}/${datos.partidos.length} partidos\n\n`;
-  lista.slice(0,20).forEach(f => t += `${f.lugar}. ${f.avatar} ${f.nombre} — ${f.puntos} aciertos${f.premio?` · gana ${dinero(f.premio)}`:''}\n`);
+  lista.slice(0,20).forEach(f => t += `${f.lugar}. ${f.avatar} ${f.nombre} — ${f.puntos} aciertos${f.premio?` · ${dinero(f.premio)}`:''}\n`);
   if(j.estado === 'abierta') t += `\nCierra ${fechaMX(j.fecha_limite)}. Aún puedes entrar.`;
   window.open('https://wa.me/?text=' + encodeURIComponent(t), '_blank');
+}
+
+/* ============================================================
+   SALDO
+   ============================================================ */
+function vistaSaldo(){
+  const j = datos.jornada;
+  const misDep = datos.depositos.filter(d => d.usuario_id === yo.id);
+  const misRet = datos.retiros.filter(r => r.usuario_id === yo.id);
+  const pend = misDep.filter(d => d.estado === 'pendiente');
+
+  const hayZelle = CFG.zelle_email || CFG.zelle_nombre;
+  const hayBanco = CFG.banco_clabe || CFG.banco_nombre;
+
+  const movs = datos.movimientos.map(m => `
+    <div class="mov">
+      <div><div class="d">${esc(m.concepto || m.tipo)}</div><div class="f">${fechaCorta(m.created_at)}</div></div>
+      <div class="m ${Number(m.monto)>=0?'suma':'resta'}">${Number(m.monto)>=0?'+':'−'}${dinero(Math.abs(m.monto))}</div>
+    </div>`).join('') || '<div class="vacio">Sin movimientos todavía.</div>';
+
+  return `
+  <div class="monedero">
+    <div class="etq">Saldo disponible</div>
+    <div class="cifra">${dinero(yo.saldo)}</div>
+    <div class="sub">${j && j.estado==='abierta' ? `Alcanza para ${Math.floor(Number(yo.saldo)/Number(j.costo))} ${Math.floor(Number(yo.saldo)/Number(j.costo))===1?'boleta':'boletas'} de esta jornada` : 'Deposita para entrar a la próxima jornada'}</div>
+  </div>
+
+  ${pend.length ? `<div class="aviso pend info">Tienes ${pend.length} ${pend.length===1?'depósito':'depósitos'} en revisión por ${dinero(pend.reduce((s,d)=>s+Number(d.monto),0))}. Se acredita en cuanto la organización lo confirme.</div>` : ''}
+
+  <div class="seccion">
+    <h3>Depositar</h3>
+    <p>Manda el dinero y repórtalo aquí para que te lo acrediten.</p>
+    <div class="card"><div class="card-cuerpo">
+      ${hayZelle ? `<div class="datos-pago">
+        <div class="dp"><span>Zelle a nombre de</span><b>${esc(CFG.zelle_nombre||'—')}</b></div>
+        <div class="dp"><span>Correo o teléfono</span><b>${esc(CFG.zelle_email||'—')}</b></div>
+      </div>` : ''}
+      ${hayBanco ? `<div class="datos-pago">
+        <div class="dp"><span>Banco</span><b>${esc(CFG.banco_nombre||'—')}</b></div>
+        <div class="dp"><span>Titular</span><b>${esc(CFG.banco_titular||'—')}</b></div>
+        <div class="dp"><span>CLABE o cuenta</span><b>${esc(CFG.banco_clabe||'—')}</b></div>
+      </div>` : ''}
+      ${(!hayZelle && !hayBanco) ? `<div class="aviso info">La organización todavía no publica los datos de pago.</div>` : ''}
+
+      <div class="fila2">
+        <div class="campo"><label for="dpMonto">Cuánto depositaste</label>
+          <input id="dpMonto" type="number" inputmode="decimal" step="1" placeholder="25"></div>
+        <div class="campo"><label for="dpMetodo">Por dónde</label>
+          <select id="dpMetodo"><option value="zelle">Zelle</option><option value="transferencia">Transferencia</option><option value="efectivo">Efectivo</option></select></div>
+      </div>
+      <div class="campo"><label for="dpRef">Referencia, folio o últimos 4 dígitos</label>
+        <input id="dpRef" placeholder="Para que lo puedan localizar"></div>
+      <button class="btn" onclick="reportarDeposito()">Reportar mi depósito</button>
+      <div id="dpMsg"></div>
+    </div></div>
+  </div>
+
+  ${misDep.length ? `<div class="seccion">
+    <h3>Mis depósitos</h3>
+    <div class="card">${misDep.map(d => `
+      <div class="jrow">
+        <div><div class="t">${dinero(d.monto)} · ${esc(d.metodo)}</div>
+          <div class="s">${fechaCorta(d.created_at)}${d.referencia?' · ref '+esc(d.referencia):''}${d.nota?' · '+esc(d.nota):''}</div></div>
+        <span class="etiqueta ${d.estado==='aprobado'?'ok':(d.estado==='rechazado'?'mal':'pend')}">${d.estado}</span>
+      </div>`).join('')}</div>
+  </div>` : ''}
+
+  <div class="seccion">
+    <h3>Retirar</h3>
+    <p>Te lo pagamos por el mismo medio del depósito.</p>
+    <div class="card"><div class="card-cuerpo">
+      <div class="campo"><label for="rtMonto">Cuánto quieres retirar</label>
+        <input id="rtMonto" type="number" inputmode="decimal" step="1" placeholder="${Number(yo.saldo).toFixed(0)}"></div>
+      <div class="campo"><label for="rtDatos">A dónde te lo mandamos</label>
+        <input id="rtDatos" placeholder="Zelle, cuenta o CLABE"></div>
+      <button class="btn fantasma" onclick="pedirRetiro()">Solicitar retiro</button>
+      <div id="rtMsg"></div>
+    </div></div>
+  </div>
+
+  ${misRet.length ? `<div class="seccion">
+    <h3>Mis retiros</h3>
+    <div class="card">${misRet.map(r => `
+      <div class="jrow">
+        <div><div class="t">${dinero(r.monto)}</div><div class="s">${fechaCorta(r.created_at)}${r.datos?' · '+esc(r.datos):''}</div></div>
+        <span class="etiqueta ${r.estado==='pagado'?'ok':(r.estado==='rechazado'?'mal':'pend')}">${r.estado}</span>
+      </div>`).join('')}</div>
+  </div>` : ''}
+
+  <div class="seccion">
+    <h3>Estado de cuenta</h3>
+    <div class="card">${movs}</div>
+  </div>`;
+}
+
+async function reportarDeposito(){
+  const monto = Number($('dpMonto').value);
+  const ref = $('dpRef').value.trim();
+  if(!(monto > 0)) return aviso('dpMsg','Escribe cuánto depositaste.');
+  if(ref.length < 3) return aviso('dpMsg','Pon una referencia para poder localizar tu depósito.');
+  const { error } = await sb.from('depositos').insert({
+    usuario_id:yo.id, monto, metodo:$('dpMetodo').value, referencia:ref, estado:'pendiente'
+  });
+  if(error) return aviso('dpMsg','No se pudo reportar: ' + error.message);
+  $('dpMonto').value=''; $('dpRef').value='';
+  await cargar();
+  aviso('dpMsg','Depósito reportado. Te avisamos en cuanto se acredite.','ok');
+}
+
+async function pedirRetiro(){
+  const monto = Number($('rtMonto').value);
+  const dts = $('rtDatos').value.trim();
+  if(!(monto > 0)) return aviso('rtMsg','Escribe cuánto quieres retirar.');
+  if(monto > Number(yo.saldo)) return aviso('rtMsg','No puedes retirar más de tu saldo disponible.');
+  if(dts.length < 4) return aviso('rtMsg','Pon a dónde te lo mandamos.');
+  const { error } = await sb.from('retiros').insert({ usuario_id:yo.id, monto, datos:dts, estado:'pendiente' });
+  if(error) return aviso('rtMsg','No se pudo solicitar: ' + error.message);
+  $('rtMonto').value=''; $('rtDatos').value='';
+  await cargar();
+  aviso('rtMsg','Retiro solicitado.','ok');
 }
 
 /* ============================================================
@@ -773,7 +935,6 @@ function compartirTabla(){
 async function cargarHistorial(){
   const ids = datos.jornadas.map(j => j.id);
   if(!ids.length){ historial = { jornadas:[], jugadas:0, aciertos:0, ganadas:0, premio:0 }; return pintar(); }
-
   const [bt, pt] = await Promise.all([
     sb.from('boletos').select('*').in('jornada_id', ids),
     sb.from('partidos').select('id,jornada_id,resultado').in('jornada_id', ids)
@@ -793,28 +954,21 @@ async function cargarHistorial(){
         if(par && par.resultado === x.pick) a++;
       });
       return { ...b, aciertos:a };
-    }).sort((x,y) => y.aciertos - x.aciertos || new Date(x.created_at) - new Date(y.created_at));
-
+    }).sort((x,y) => y.aciertos - x.aciertos);
     const mio = marcados.find(b => b.usuario_id === yo.id);
     if(!mio) return;
     const mejor = marcados[0]?.aciertos ?? 0;
-    const empatados = marcados.filter(b => b.aciertos === mejor).length;
-    const pagadas = marcados.filter(b => b.pagado).length;
+    const emp = marcados.filter(b => b.aciertos === mejor).length;
+    const pag = marcados.filter(b => b.pagado).length;
     const gane = j.estado === 'finalizada' && mio.aciertos === mejor && conRes > 0;
-    resumen.push({
-      jornada:j, aciertos:mio.aciertos, jugados:conRes, total:ps.length,
-      pagado:mio.pagado, gane,
-      premio: gane ? (pagadas * Number(j.costo) * (j.pct1/100)) / empatados : 0
-    });
+    resumen.push({ jornada:j, aciertos:mio.aciertos, jugados:conRes, gane,
+      premio: gane ? (pag * Number(j.costo) * (j.pct1/100)) / emp : 0 });
   });
 
-  historial = {
-    jornadas: resumen,
-    jugadas: resumen.length,
-    aciertos: resumen.reduce((s,r) => s + r.aciertos, 0),
-    ganadas: resumen.filter(r => r.gane).length,
-    premio: resumen.reduce((s,r) => s + r.premio, 0)
-  };
+  historial = { jornadas:resumen, jugadas:resumen.length,
+    aciertos:resumen.reduce((s,r)=>s+r.aciertos,0),
+    ganadas:resumen.filter(r=>r.gane).length,
+    premio:resumen.reduce((s,r)=>s+r.premio,0) };
   pintar();
 }
 
@@ -825,10 +979,8 @@ function vistaPerfil(){
 
   const lista = h.jornadas.map(r => `
     <div class="jrow">
-      <div>
-        <div class="t">${r.gane?'🏆 ':''}${esc(r.jornada.nombre)}</div>
-        <div class="s">${r.aciertos} aciertos de ${r.jugados} jugados${r.premio?` · ganaste ${dinero(r.premio)}`:''}${!r.pagado?' · sin pagar':''}</div>
-      </div>
+      <div><div class="t">${r.gane?'🏆 ':''}${esc(r.jornada.nombre)}</div>
+        <div class="s">${r.aciertos} aciertos de ${r.jugados} jugados${r.premio?` · ganaste ${dinero(r.premio)}`:''}</div></div>
       <button class="btn chico fantasma" onclick="verJornada('${r.jornada.id}')">Ver</button>
     </div>`).join('') || '<div class="vacio">Todavía no juegas ninguna jornada.</div>';
 
@@ -840,15 +992,15 @@ function vistaPerfil(){
 
   return `
   ${!yo.verificado ? bannerVerificar() : ''}
-  <div class="perfil-cab">
-    <div class="perfil-tira"></div>
-    <div class="perfil-cuerpo">
-    <div class="perfil-av">${yo.avatar || '⚽'}</div>
-    <div>
-      <h2>${esc(yo.nombre)}</h2>
-      <p>${yo.pais==='1'?'🇺🇸':'🇲🇽'} ${bonito(yo.whatsapp)}${esStaff()?' · '+tituloRol(yo.rol).toLowerCase():''}
-        <span class="${yo.verificado?'chip-ver':'chip-no'}">${yo.verificado?'VERIFICADO':'SIN VERIFICAR'}</span></p>
-    </div>
+  <div class="credencial">
+    <div class="tira"></div>
+    <div class="cred-cuerpo">
+      <div class="cred-av">${yo.avatar || '⚽'}</div>
+      <div>
+        <h2>${esc(yo.nombre)}</h2>
+        <p>${yo.pais==='1'?'🇺🇸':'🇲🇽'} ${bonito(yo.whatsapp)}${esStaff()?' · '+tituloRol(yo.rol).toLowerCase():''}
+          <span class="${yo.verificado?'chip-ver':'chip-no'}">${yo.verificado?'VERIFICADO':'SIN VERIFICAR'}</span></p>
+      </div>
     </div>
   </div>
 
@@ -862,46 +1014,39 @@ function vistaPerfil(){
     <div class="stat"><b>${dinero(h.premio)}</b><span>Ganado en premios</span></div>
   </div>
 
-  <div class="seccion">
-    <h3>Mis jornadas</h3>
-    <div class="tabla">${lista}</div>
-  </div>
-
-  ${otras ? `<div class="seccion"><h3>Otras jornadas</h3><div class="tabla">${otras}</div></div>` : ''}
+  <div class="seccion"><h3>Mis jornadas</h3><div class="card">${lista}</div></div>
+  ${otras ? `<div class="seccion"><h3>Otras jornadas</h3><div class="card">${otras}</div></div>` : ''}
 
   <div class="seccion">
     <h3>Editar mi perfil</h3>
-    <div class="tarjeta">
-      <div class="campo"><label for="pfNombre">Nombre en la tabla</label>
-        <input id="pfNombre" value="${esc(yo.nombre)}"></div>
+    <div class="card"><div class="card-cuerpo">
+      <div class="campo"><label for="pfNombre">Nombre en la tabla</label><input id="pfNombre" value="${esc(yo.nombre)}"></div>
       <div class="campo"><label>Mi figura</label>
-        <div class="avatares">${AVATARES.map(a =>
-          `<button type="button" class="av-op ${a===(yo.avatar||'⚽')?'sel':''}" onclick="cambiarAvatar('${a}')">${a}</button>`).join('')}</div></div>
+        <div class="avatares">${AVATARES.map(a => `<button type="button" class="av-op ${a===(yo.avatar||'⚽')?'sel':''}" onclick="cambiarAvatar('${a}')">${a}</button>`).join('')}</div></div>
       <button class="btn" onclick="guardarPerfil()">Guardar cambios</button>
       <div id="pfMsg"></div>
-    </div>
+    </div></div>
   </div>
 
   <div class="seccion">
     <h3>Cambiar PIN</h3>
-    <div class="tarjeta">
+    <div class="card"><div class="card-cuerpo">
       <div class="fila2">
-        <div class="campo"><label for="pnViejo">PIN actual</label>
-          <input id="pnViejo" type="password" inputmode="numeric" maxlength="4"></div>
-        <div class="campo"><label for="pnNuevo">PIN nuevo</label>
-          <input id="pnNuevo" type="password" inputmode="numeric" maxlength="4"></div>
+        <div class="campo"><label for="pnViejo">PIN actual</label><input id="pnViejo" type="password" inputmode="numeric" maxlength="4"></div>
+        <div class="campo"><label for="pnNuevo">PIN nuevo</label><input id="pnNuevo" type="password" inputmode="numeric" maxlength="4"></div>
       </div>
       <button class="btn fantasma" onclick="cambiarPin()">Cambiar PIN</button>
       <div id="pnMsg"></div>
-    </div>
+    </div></div>
+  </div>
+
+  <div class="seccion">
+    <h3>Cláusulas de participación</h3>
+    <div class="card"><div class="card-cuerpo"><div class="legal">${esc(terminos())}</div></div></div>
   </div>`;
 }
 
-async function cambiarAvatar(a){
-  yo.avatar = a;
-  $('miAvatar').textContent = a;
-  pintar();
-}
+function cambiarAvatar(a){ yo.avatar = a; pintar(); }
 
 async function guardarPerfil(){
   const nombre = $('pfNombre').value.trim();
@@ -909,40 +1054,67 @@ async function guardarPerfil(){
   const { error } = await sb.from('usuarios').update({ nombre, avatar:yo.avatar }).eq('id', yo.id);
   if(error) return aviso('pfMsg','No se pudo guardar: ' + error.message);
   yo.nombre = nombre;
-  const et2 = yo.rol==='admin' ? 'Dueño · ' : (yo.rol==='organizador' ? 'Organizador · ' : '');
-  $('quienSoy').textContent = et2 + nombre;
-  historial = null;
-  await cargar();
-  await cargarHistorial();
+  const et = tituloRol(yo.rol);
+  $('quienSoy').textContent = (et ? et + ' · ' : '') + nombre;
+  historial = null; await cargar(); await cargarHistorial();
   aviso('pfMsg','Perfil actualizado.','ok');
 }
 
 async function cambiarPin(){
   const viejo = $('pnViejo').value.trim(), nuevo = $('pnNuevo').value.trim();
-  if(viejo !== yo.pin)  return aviso('pnMsg','Tu PIN actual no coincide.');
-  if(nuevo.length !== 4) return aviso('pnMsg','El PIN nuevo debe tener 4 dígitos.');
+  if(viejo !== yo.pin)   return aviso('pnMsg','Tu PIN actual no coincide.');
+  if(!/^\d{4}$/.test(nuevo)) return aviso('pnMsg','El PIN nuevo debe tener 4 dígitos.');
   const { error } = await sb.from('usuarios').update({ pin:nuevo }).eq('id', yo.id);
   if(error) return aviso('pnMsg','No se pudo cambiar: ' + error.message);
-  yo.pin = nuevo;
-  $('pnViejo').value = ''; $('pnNuevo').value = '';
+  yo.pin = nuevo; $('pnViejo').value=''; $('pnNuevo').value='';
   aviso('pnMsg','PIN cambiado.','ok');
 }
 
 async function verJornada(id){ jornadaVista = id; tab = 'boleta'; armarTabs(); await cargar(); }
 
 /* ============================================================
-   ADMIN
+   PANEL
    ============================================================ */
 function vistaAdmin(){
   const j = datos.jornada;
   const jugadores  = datos.usuarios.filter(esJugador);
   const pendientes = jugadores.filter(u => !u.verificado);
   const verificados= jugadores.filter(u => u.verificado);
+  const depPend    = datos.depositos.filter(d => d.estado === 'pendiente');
+  const retPend    = datos.retiros.filter(r => r.estado === 'pendiente');
+
   return `
+  ${depPend.length ? `<div class="seccion">
+    <h3>Depósitos por confirmar (${depPend.length})</h3>
+    <p>Revisa que el dinero haya llegado antes de acreditar.</p>
+    <div class="card">${depPend.map(d => `
+      <div class="jrow">
+        <div><div class="t">${avatarDe(d.usuario_id)} ${esc(nombreDe(d.usuario_id))} · ${dinero(d.monto)}</div>
+          <div class="s">${esc(d.metodo)} · ref ${esc(d.referencia||'—')} · ${fechaCorta(d.created_at)}</div></div>
+        ${esDueno() ? `<div style="display:flex;gap:8px">
+          <button class="btn chico verde" onclick="resolverDeposito('${d.id}',true)">Acreditar</button>
+          <button class="btn chico fantasma" onclick="resolverDeposito('${d.id}',false)">Rechazar</button>
+        </div>` : '<span class="etiqueta pend">Solo Jared</span>'}
+      </div>`).join('')}</div>
+  </div>` : ''}
+
+  ${retPend.length ? `<div class="seccion">
+    <h3>Retiros por pagar (${retPend.length})</h3>
+    <div class="card">${retPend.map(r => `
+      <div class="jrow">
+        <div><div class="t">${avatarDe(r.usuario_id)} ${esc(nombreDe(r.usuario_id))} · ${dinero(r.monto)}</div>
+          <div class="s">${esc(r.datos||'—')} · ${fechaCorta(r.created_at)}</div></div>
+        ${esDueno() ? `<div style="display:flex;gap:8px">
+          <button class="btn chico verde" onclick="resolverRetiro('${r.id}',true)">Ya pagué</button>
+          <button class="btn chico fantasma" onclick="resolverRetiro('${r.id}',false)">Rechazar</button>
+        </div>` : '<span class="etiqueta pend">Solo Jared</span>'}
+      </div>`).join('')}</div>
+  </div>` : ''}
+
   <div class="seccion">
     <h3>Nueva jornada</h3>
-    <p>Costo, hora de cierre y reparto de la bolsa.</p>
-    <div class="tarjeta">
+    <p>Costo, cierre y reparto de la bolsa.</p>
+    <div class="card"><div class="card-cuerpo">
       <div class="campo"><label for="njNombre">Nombre de la jornada</label>
         <input id="njNombre" placeholder="Jornada 8 · sábado y domingo"></div>
       <div class="fila2">
@@ -957,96 +1129,80 @@ function vistaAdmin(){
       </div>
       <button class="btn" onclick="crearJornada()">Crear jornada</button>
       <div id="njMsg"></div>
-      <p class="mini">Si quieres que todo se lo lleve el primer lugar, pon 100 / 0 / 0.</p>
+      <p class="mini">Si todo se lo lleva el primero, pon 100 / 0 / 0.</p>
+    </div></div>
+  </div>
+
+  ${j ? panelJornada(j) : ''}
+
+  ${pendientes.length ? `<div class="seccion">
+    <h3>WhatsApp por verificar (${pendientes.length})</h3>
+    <p>Compara el código que te llegó con el de aquí.</p>
+    <div class="card">${pendientes.map(u => `
+      <div class="jrow">
+        <div><div class="t">${u.avatar||'⚽'} ${esc(u.nombre)}</div>
+          <div class="s">${u.pais==='1'?'🇺🇸':'🇲🇽'} ${bonito(u.whatsapp)} · código <b style="color:var(--oro)">${esc(u.codigo_verif||'—')}</b></div></div>
+        <div style="display:flex;gap:8px">
+          <button class="btn chico verde" onclick="verificarJugador('${u.id}',true)">Aprobar</button>
+          <button class="btn chico fantasma" onclick="verificarJugador('${u.id}',false)">Borrar</button>
+        </div>
+      </div>`).join('')}</div>
+  </div>` : ''}
+
+  <div class="seccion">
+    <h3>Participantes (${verificados.length})</h3>
+    <div class="card">${verificados.map(u => `
+      <div class="jrow">
+        <div><div class="t">${u.avatar||'⚽'} ${esc(u.nombre)}</div>
+          <div class="s">${bonito(u.whatsapp)} · saldo ${dinero(u.saldo)}</div></div>
+        <div style="display:flex;gap:8px">
+          ${esDueno()?`<button class="btn chico fantasma" onclick="ajustarSaldo('${u.id}','${esc(u.nombre)}')">Saldo</button>`:''}
+          <button class="btn chico fantasma" onclick="alternarJugador('${u.id}',${u.activo})">${u.activo?'Suspender':'Activar'}</button>
+        </div>
+      </div>`).join('') || '<div class="vacio">Todavía no hay participantes verificados.</div>'}
     </div>
   </div>
-  ${j ? panelJornada(j) : ''}
+
   ${esDueno() ? `
   <div class="seccion">
-    <h3>Tu WhatsApp de organizador</h3>
-    <p>A este número llegan los códigos de verificación de los jugadores.</p>
-    <div class="tarjeta">
-      <div class="campo"><label for="cfWa">Número con lada de país</label>
-        <input id="cfWa" inputmode="tel" value="${esc(WHATSAPP_ORG)}" placeholder="529181234567"></div>
-      <button class="btn" onclick="guardarWaOrg()">Guardar número</button>
+    <h3>Datos de cobro</h3>
+    <p>Lo que ven los participantes al depositar.</p>
+    <div class="card"><div class="card-cuerpo">
+      <div class="campo"><label for="cfWa">Tu WhatsApp de organización, con lada de país</label>
+        <input id="cfWa" inputmode="tel" value="${esc(CFG.whatsapp_org||'')}" placeholder="529181234567"></div>
+      <div class="fila2">
+        <div class="campo"><label for="cfZn">Zelle a nombre de</label><input id="cfZn" value="${esc(CFG.zelle_nombre||'')}"></div>
+        <div class="campo"><label for="cfZe">Correo o teléfono Zelle</label><input id="cfZe" value="${esc(CFG.zelle_email||'')}"></div>
+      </div>
+      <div class="campo"><label for="cfBn">Banco</label><input id="cfBn" value="${esc(CFG.banco_nombre||'')}"></div>
+      <div class="fila2">
+        <div class="campo"><label for="cfBt">Titular</label><input id="cfBt" value="${esc(CFG.banco_titular||'')}"></div>
+        <div class="campo"><label for="cfBc">CLABE o cuenta</label><input id="cfBc" value="${esc(CFG.banco_clabe||'')}"></div>
+      </div>
+      <button class="btn" onclick="guardarCobro()">Guardar datos de cobro</button>
       <div id="cfMsg"></div>
-      <p class="mini">Ejemplo México: 52 + 10 dígitos. Ejemplo Estados Unidos: 1 + 10 dígitos. Sin espacios ni signo de más.</p>
-    </div>
+    </div></div>
+  </div>
+
+  <div class="seccion">
+    <h3>Cláusulas de participación</h3>
+    <p>Se muestran al registrarse y en el perfil de cada quien.</p>
+    <div class="card"><div class="card-cuerpo">
+      <div class="campo"><textarea id="cfTerm">${esc(terminos())}</textarea></div>
+      <button class="btn fantasma" onclick="guardarTerminos()">Guardar cláusulas</button>
+      <div id="ctMsg"></div>
+    </div></div>
   </div>
 
   <div class="seccion">
     <h3>Equipo</h3>
-    <p>Quiénes tienen acceso al panel.</p>
-    <div class="tabla">
-      ${datos.usuarios.filter(u => !esJugador(u)).map(u => `
-        <div class="jrow">
-          <div><div class="t">${u.avatar||'⚽'} ${esc(u.nombre)}</div>
-            <div class="s">${esc(u.whatsapp)} · ${tituloRol(u.rol)}</div></div>
-          ${u.rol==='organizador' ? `<button class="btn chico fantasma" onclick="resetPin('${u.id}','${esc(u.nombre)}')">Cambiar PIN</button>` : '<span class="etiqueta abierta">Tú</span>'}
-        </div>`).join('')}
-    </div>
-    <p class="mini">Guse no puede marcar pagos, finalizar jornadas ni entrar aquí. Todo lo demás sí.</p>
-  </div>
-  ` : ''}
-
-  ${pendientes.length ? `
-  <div class="seccion">
-    <h3>Por verificar (${pendientes.length})</h3>
-    <p>Compara el código que te llegó por WhatsApp con el que aparece aquí. Si coincide, el número es real.</p>
-    <div class="tabla">
-      ${pendientes.map(u => `
-        <div class="jrow">
-          <div>
-            <div class="t">${u.avatar||'⚽'} ${esc(u.nombre)}</div>
-            <div class="s">${bonito(u.whatsapp)} · código <b style="color:var(--ambar)">${esc(u.codigo_verif||'—')}</b></div>
-          </div>
-          <div style="display:flex;gap:8px">
-            <button class="btn chico" onclick="verificarJugador('${u.id}',true)">Aprobar</button>
-            <button class="btn chico fantasma" onclick="verificarJugador('${u.id}',false)">Borrar</button>
-          </div>
-        </div>`).join('')}
-    </div>
-  </div>` : ''}
-
-  <div class="seccion">
-    <h3>Jugadores verificados</h3>
-    <p>${verificados.length} perfiles activos.</p>
-    <div class="tabla">
-      ${verificados.map(u => `
-        <div class="jrow">
-          <div><div class="t">${u.avatar||'⚽'} ${esc(u.nombre)}</div><div class="s">${bonito(u.whatsapp)}</div></div>
-          <button class="btn chico fantasma" onclick="alternarJugador('${u.id}',${u.activo})">${u.activo?'Suspender':'Reactivar'}</button>
-        </div>`).join('') || '<div class="vacio">Todavía no hay perfiles verificados.</div>'}
-    </div>
-  </div>`;
-}
-
-async function guardarWaOrg(){
-  if(!esDueno()) return;
-  const n = soloD($('cfWa').value);
-  if(n.length < 11) return aviso('cfMsg','Falta la lada de país. México va con 52 al principio.');
-  const { error } = await sb.from('config').update({ valor:n }).eq('clave','whatsapp_org');
-  if(error) return aviso('cfMsg','No se pudo guardar: ' + error.message);
-  WHATSAPP_ORG = n;
-  aviso('cfMsg','Número guardado.','ok');
-}
-
-async function resetPin(id, nombre){
-  const nuevo = prompt(`PIN nuevo de 4 dígitos para ${nombre}:`);
-  if(nuevo === null) return;
-  if(!/^\d{4}$/.test(nuevo)) return alert('Tienen que ser 4 dígitos.');
-  const { error } = await sb.from('usuarios').update({ pin:nuevo }).eq('id', id);
-  alert(error ? 'No se pudo: ' + error.message : `Listo. El PIN de ${nombre} ahora es ${nuevo}.`);
-}
-
-async function verificarJugador(id, aprobar){
-  if(aprobar){
-    await sb.from('usuarios').update({ verificado:true }).eq('id', id);
-  } else {
-    if(!confirm('¿Borrar este perfil? Se va junto con sus boletas.')) return;
-    await sb.from('usuarios').delete().eq('id', id);
-  }
-  await cargar();
+    <div class="card">${datos.usuarios.filter(u => !esJugador(u)).map(u => `
+      <div class="jrow">
+        <div><div class="t">${u.avatar||'⚽'} ${esc(u.nombre)}</div><div class="s">${esc(u.whatsapp)} · ${tituloRol(u.rol)}</div></div>
+        ${u.rol==='organizador' ? `<button class="btn chico fantasma" onclick="resetPin('${u.id}','${esc(u.nombre)}')">Cambiar PIN</button>` : '<span class="etiqueta ok">Tú</span>'}
+      </div>`).join('')}</div>
+    <p class="mini">Guse organiza jornadas y verifica participantes. No toca depósitos, retiros, saldos ni el cierre final.</p>
+  </div>` : ''}`;
 }
 
 function panelJornada(j){
@@ -1069,32 +1225,27 @@ function panelJornada(j){
         </div>
         <div class="picks">
           ${['L','E','V'].map(v => `<button class="pick ${p.resultado===v?'sel':''}" onclick="ponerResultado('${p.id}','${v}')">${v}</button>`).join('')}
-          <button class="pick" onclick="quitarPartido('${p.id}')" title="Eliminar">×</button>
+          <button class="pick" onclick="quitarPartido('${p.id}')" title="Quitar">×</button>
         </div>
       </div>`).join('')}`).join('');
 
   const boletos = datos.boletos.map(b => `
     <div class="jrow">
       <div><div class="t">${avatarDe(b.usuario_id)} ${esc(nombreDe(b.usuario_id))}</div>
-        <div class="s">${bonito(waDe(b.usuario_id))} · ${puntosDe(b.id)} aciertos${!verifDe(b.usuario_id)?' · SIN VERIFICAR':''}</div></div>
-      ${esDueno() ? `<label class="switch">
-        <input type="checkbox" ${b.pagado?'checked':''} onchange="marcarPago('${b.id}',this.checked)">
-        <span>${b.pagado?'Pagó':'Debe'}</span>
-      </label>` : `<span class="etiqueta ${b.pagado?'abierta':'cerrada'}">${b.pagado?'Pagó':'Debe'}</span>`}
+        <div class="s">${bonito(waDe(b.usuario_id))} · ${puntosDe(b.id)} aciertos</div></div>
+      <span class="etiqueta ok">Pagada</span>
     </div>`).join('') || '<div class="vacio">Sin boletas todavía.</div>';
-
-  const porCobrar = datos.boletos.filter(b => !b.pagado).length;
 
   return `
   <div class="seccion">
-    <h3>Jornada en pantalla: ${esc(j.nombre)}</h3>
-    <p>Estado: ${j.estado} · bolsa ${dinero(bolsa())} · ${porCobrar} boletas por cobrar</p>
+    <h3>${esc(j.nombre)}</h3>
+    <p>${j.estado} · bolsa ${dinero(bolsa())} · ${datos.boletos.length} boletas</p>
 
-    <div class="tarjeta">
+    <div class="card"><div class="card-cuerpo">
       <div class="progreso">
         <div class="cifra">${n}/${META_PARTIDOS}</div>
-        <div class="txt">${mx} de Liga MX · ${n-mx} de Europa<br>
-          ${n < META_PARTIDOS ? `Faltan ${META_PARTIDOS-n} para completar` : (n === META_PARTIDOS ? 'Quiniela completa' : `Llevas ${n-META_PARTIDOS} de más`)}</div>
+        <div class="txt">${mx} Liga MX · ${n-mx} Europa<br>
+          ${n < META_PARTIDOS ? `Faltan ${META_PARTIDOS-n}. La jornada no se abre hasta completar los ${META_PARTIDOS}.` : (n === META_PARTIDOS ? 'Jornada completa y visible para todos' : `Llevas ${n-META_PARTIDOS} de más`)}</div>
       </div>
       <div class="barritas">${barritas}</div>
 
@@ -1116,11 +1267,10 @@ function panelJornada(j){
       </datalist>
       <button class="btn" onclick="agregarPartido()">Agregar partido</button>
       <div id="apMsg"></div>
-      <p class="mini">El catálogo es para escribir rápido. Puedes teclear cualquier equipo que no aparezca.</p>
-    </div>
+    </div></div>
 
-    ${n ? `<div class="boleta">
-      <div class="boleta-cab"><h3>Partidos y resultados</h3><em>toca L · E · V</em></div>
+    ${n ? `<div class="card">
+      <div class="card-cab"><h3>Partidos y resultados</h3><em>toca L · E · V</em></div>
       ${listaPartidos}
     </div>` : ''}
 
@@ -1128,13 +1278,13 @@ function panelJornada(j){
       <button class="btn fantasma" onclick="cambiarEstado('${j.estado==='abierta'?'cerrada':'abierta'}')">
         ${j.estado==='abierta'?'Cerrar registro':'Reabrir registro'}
       </button>
-      ${esDueno() ? `<button class="btn" onclick="cambiarEstado('finalizada')">Finalizar y pagar</button>` : ''}
+      ${esDueno() ? `<button class="btn" onclick="finalizarJornada()" ${j.premios_pagados?'disabled':''}>${j.premios_pagados?'Premios pagados':'Finalizar y pagar'}</button>` : ''}
     </div>
-    ${!esDueno() ? `<p class="mini">Los pagos y el cierre final de la jornada los maneja Jared.</p>` : ''}
+    ${!esDueno() ? `<p class="mini">El cierre final y el pago de premios los maneja Jared.</p>` : ''}
     <button class="btn fantasma" onclick="convocar()">Convocar por WhatsApp</button>
 
-    <div class="tabla" style="margin-top:18px">
-      <div class="tabla-cab">Cobranza</div>
+    <div class="card">
+      <div class="card-cab"><h3>Boletas de esta jornada</h3></div>
       ${boletos}
     </div>
   </div>`;
@@ -1151,57 +1301,123 @@ async function crearJornada(){
   if(nombre.length < 3) return aviso('njMsg','Ponle nombre a la jornada.');
   if(!limite)           return aviso('njMsg','Falta la fecha de cierre.');
   const { data, error } = await sb.from('jornadas').insert({
-    nombre, costo, moneda:$('njMoneda').value,
-    fecha_limite:new Date(limite).toISOString(),
+    nombre, costo, moneda:$('njMoneda').value, fecha_limite:new Date(limite).toISOString(),
     pct1:Number($('njP1').value)||0, pct2:Number($('njP2').value)||0, pct3:Number($('njP3').value)||0
   }).select().single();
   if(error) return aviso('njMsg','No se pudo crear: ' + error.message);
-  jornadaVista = data.id; historial = null;
-  await cargar();
+  jornadaVista = data.id; historial = null; await cargar();
 }
 
 async function agregarPartido(){
   const local = $('apLocal').value.trim(), visita = $('apVisita').value.trim();
   if(!local || !visita) return aviso('apMsg','Faltan los dos equipos.');
   if(local.toLowerCase() === visita.toLowerCase()) return aviso('apMsg','Un equipo no juega contra sí mismo.');
+  if(datos.partidos.length >= META_PARTIDOS) return aviso('apMsg',`Ya tienes los ${META_PARTIDOS} partidos. Quita uno si quieres cambiarlo.`);
   const { error } = await sb.from('partidos').insert({
     jornada_id: datos.jornada.id, orden: datos.partidos.length + 1,
     liga: ligaSel, local, visita, hora: $('apHora').value.trim() || null
   });
   if(error) return aviso('apMsg','No se pudo agregar: ' + error.message);
-  $('apLocal').value = ''; $('apVisita').value = '';
-  await cargar();
-  $('apLocal')?.focus();
+  $('apLocal').value=''; $('apVisita').value='';
+  await cargar(); $('apLocal')?.focus();
 }
 
 async function quitarPartido(id){
-  if(!confirm('¿Eliminar este partido? También se borran los pronósticos de ese partido.')) return;
+  if(!confirm('¿Quitar este partido? Se borran también los pronósticos de ese partido.')) return;
   await sb.from('partidos').delete().eq('id', id);
-  const restantes = datos.partidos.filter(p => p.id !== id);
-  for(let i = 0; i < restantes.length; i++){
-    if(restantes[i].orden !== i+1) await sb.from('partidos').update({ orden:i+1 }).eq('id', restantes[i].id);
-  }
+  const rest = datos.partidos.filter(p => p.id !== id);
+  for(let i=0;i<rest.length;i++) if(rest[i].orden !== i+1) await sb.from('partidos').update({orden:i+1}).eq('id',rest[i].id);
   await cargar();
 }
 
 async function ponerResultado(id, v){
   const actual = datos.partidos.find(p => p.id === id)?.resultado;
   await sb.from('partidos').update({ resultado: actual === v ? null : v }).eq('id', id);
-  historial = null;
-  await cargar();
-}
-
-async function marcarPago(boletoId, valor){
-  if(!esDueno()) return;
-  await sb.from('boletos').update({ pagado: valor }).eq('id', boletoId);
-  await cargar();
+  historial = null; await cargar();
 }
 
 async function cambiarEstado(estado){
-  if(estado === 'finalizada' && !esDueno()) return alert('Solo Jared puede finalizar la jornada y repartir.');
-  if(estado === 'finalizada' && !confirm('¿Finalizar la jornada? Se calculan los premios con los resultados actuales.')) return;
   await sb.from('jornadas').update({ estado }).eq('id', datos.jornada.id);
-  historial = null;
+  historial = null; await cargar();
+}
+
+async function finalizarJornada(){
+  if(!esDueno()) return;
+  const j = datos.jornada;
+  if(j.premios_pagados) return alert('Los premios de esta jornada ya se pagaron.');
+  const lista = tablaPosiciones().filter(f => f.premio > 0);
+  if(!lista.length) return alert('Todavía no hay premios que repartir. Captura los resultados primero.');
+  const resumen = lista.map(f => `${f.nombre}: ${dinero(f.premio)}`).join('\n');
+  if(!confirm(`Se van a abonar estos premios a los monederos:\n\n${resumen}\n\n¿Confirmas?`)) return;
+
+  for(const f of lista){
+    const { data:u } = await sb.from('usuarios').select('saldo').eq('id', f.usuario_id).single();
+    await sb.from('usuarios').update({ saldo: Number(u.saldo) + f.premio }).eq('id', f.usuario_id);
+    await sb.from('movimientos').insert({
+      usuario_id:f.usuario_id, tipo:'premio', monto:f.premio,
+      concepto:`Premio ${j.nombre} · ${f.lugar}º lugar`, jornada_id:j.id, creado_por:yo.id
+    });
+  }
+  await sb.from('jornadas').update({ estado:'finalizada', premios_pagados:true }).eq('id', j.id);
+  historial = null; await cargar();
+  alert('Premios abonados.');
+}
+
+async function resolverDeposito(id, aprobar){
+  if(!esDueno()) return;
+  const d = datos.depositos.find(x => x.id === id); if(!d) return;
+  if(aprobar){
+    const { data:u } = await sb.from('usuarios').select('saldo').eq('id', d.usuario_id).single();
+    await sb.from('usuarios').update({ saldo: Number(u.saldo) + Number(d.monto) }).eq('id', d.usuario_id);
+    await sb.from('movimientos').insert({
+      usuario_id:d.usuario_id, tipo:'deposito', monto:Number(d.monto),
+      concepto:`Depósito por ${d.metodo}`, creado_por:yo.id
+    });
+    await sb.from('depositos').update({ estado:'aprobado', revisado_por:yo.id }).eq('id', id);
+  } else {
+    const nota = prompt('Motivo del rechazo (lo va a ver el participante):') || 'No se localizó el depósito';
+    await sb.from('depositos').update({ estado:'rechazado', nota, revisado_por:yo.id }).eq('id', id);
+  }
+  await cargar();
+}
+
+async function resolverRetiro(id, pagado){
+  if(!esDueno()) return;
+  const r = datos.retiros.find(x => x.id === id); if(!r) return;
+  if(pagado){
+    const { data:u } = await sb.from('usuarios').select('saldo').eq('id', r.usuario_id).single();
+    if(Number(u.saldo) < Number(r.monto)) return alert('El participante ya no tiene ese saldo.');
+    await sb.from('usuarios').update({ saldo: Number(u.saldo) - Number(r.monto) }).eq('id', r.usuario_id);
+    await sb.from('movimientos').insert({
+      usuario_id:r.usuario_id, tipo:'retiro', monto:-Number(r.monto), concepto:'Retiro pagado', creado_por:yo.id
+    });
+    await sb.from('retiros').update({ estado:'pagado', revisado_por:yo.id }).eq('id', id);
+  } else {
+    await sb.from('retiros').update({ estado:'rechazado', revisado_por:yo.id }).eq('id', id);
+  }
+  await cargar();
+}
+
+async function ajustarSaldo(id, nombre){
+  if(!esDueno()) return;
+  const txt = prompt(`Ajuste de saldo para ${nombre}.\nPon un número positivo para abonar o negativo para descontar:`);
+  if(txt === null) return;
+  const monto = Number(txt);
+  if(!monto) return;
+  const concepto = prompt('Concepto del ajuste:') || 'Ajuste manual';
+  const { data:u } = await sb.from('usuarios').select('saldo').eq('id', id).single();
+  await sb.from('usuarios').update({ saldo: Number(u.saldo) + monto }).eq('id', id);
+  await sb.from('movimientos').insert({ usuario_id:id, tipo:'ajuste', monto, concepto, creado_por:yo.id });
+  await cargar();
+}
+
+async function verificarJugador(id, aprobar){
+  if(aprobar){
+    await sb.from('usuarios').update({ verificado:true }).eq('id', id);
+  } else {
+    if(!confirm('¿Borrar este perfil? Se va junto con sus boletas y su saldo.')) return;
+    await sb.from('usuarios').delete().eq('id', id);
+  }
   await cargar();
 }
 
@@ -1210,10 +1426,45 @@ async function alternarJugador(id, activo){
   await cargar();
 }
 
+async function resetPin(id, nombre){
+  if(!esDueno()) return;
+  const nuevo = prompt(`PIN nuevo de 4 dígitos para ${nombre}:`);
+  if(nuevo === null) return;
+  if(!/^\d{4}$/.test(nuevo)) return alert('Tienen que ser 4 dígitos.');
+  const { error } = await sb.from('usuarios').update({ pin:nuevo }).eq('id', id);
+  alert(error ? 'No se pudo: ' + error.message : `Listo. El PIN de ${nombre} ahora es ${nuevo}.`);
+}
+
+async function guardarCobro(){
+  if(!esDueno()) return;
+  const pares = {
+    whatsapp_org: soloD($('cfWa').value),
+    zelle_nombre: $('cfZn').value.trim(),
+    zelle_email:  $('cfZe').value.trim(),
+    banco_nombre: $('cfBn').value.trim(),
+    banco_titular:$('cfBt').value.trim(),
+    banco_clabe:  $('cfBc').value.trim()
+  };
+  for(const [clave, valor] of Object.entries(pares)){
+    await sb.from('config').upsert({ clave, valor }, { onConflict:'clave' });
+  }
+  await cargar();
+  aviso('cfMsg','Datos de cobro guardados.','ok');
+}
+
+async function guardarTerminos(){
+  if(!esDueno()) return;
+  const valor = $('cfTerm').value.trim();
+  if(valor.length < 50) return aviso('ctMsg','El texto quedó muy corto.');
+  await sb.from('config').upsert({ clave:'terminos', valor }, { onConflict:'clave' });
+  await cargar();
+  aviso('ctMsg','Cláusulas guardadas.','ok');
+}
+
 function convocar(){
   const j = datos.jornada;
   let t = `*QUINIELAS EL PIJI ACHOTERO*\n${j.nombre}\n\n`;
-  t += `Costo: ${dinero(j.costo)} ${j.moneda}\nCierra: ${fechaMX(j.fecha_limite)}\nBolsa actual: ${dinero(bolsa())}\nGana el que más aciertos junte.\n\n`;
+  t += `Costo: ${dinero(j.costo)} ${j.moneda}\nCierra: ${fechaMX(j.fecha_limite)}\nBolsa actual: ${dinero(bolsa())}\nGana quien más aciertos junte.\n\n`;
   porLiga(datos.partidos).forEach(g => {
     t += `_${abrevia(g.liga)}_\n`;
     g.partidos.forEach(p => t += `${p.orden}. ${p.local} vs ${p.visita}${p.hora?' · '+p.hora:''}\n`);
@@ -1226,13 +1477,11 @@ function convocar(){
 /* ---------- Arranque ---------- */
 document.addEventListener('keydown', e => {
   if(e.key !== 'Enter') return;
-  if(!$('entrada').classList.contains('hide')){
-    $('formLogin').classList.contains('hide') ? registrar() : entrar();
-  } else if(['apVisita','apHora'].includes(document.activeElement?.id)){
-    agregarPartido();
-  }
+  const id = document.activeElement?.id;
+  if(['lgWa','lgPin'].includes(id)) entrar();
+  else if(['rgNombre','rgWa','rgPin'].includes(id)) registrar();
+  else if(['apVisita','apHora'].includes(id)) agregarPartido();
 });
-pintarAvatares();
 sesionGuardada();
 </script>
 </body>
