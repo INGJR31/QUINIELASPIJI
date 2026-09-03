@@ -202,6 +202,40 @@ a{color:var(--oro)}
 .chip-no{font-size:10px;font-weight:700;letter-spacing:.08em;padding:3px 9px;border-radius:999px;background:rgba(192,57,43,.20);color:#F08A7E;margin-left:6px}
 .legal{font-size:13px;line-height:1.65;color:var(--suave);white-space:pre-wrap}
 .legal strong{color:var(--texto)}
+.subtabs{display:flex;gap:8px;margin-top:16px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}
+.subtabs::-webkit-scrollbar{display:none}
+.subtab{flex:0 0 auto;padding:9px 16px;border-radius:999px;border:1px solid var(--linea);background:var(--panel);
+  font-family:'Barlow Condensed';font-size:15px;font-weight:600;text-transform:uppercase;color:var(--suave)}
+.subtab.on{background:var(--oro);color:#201804;border-color:transparent}
+
+.noti{padding:16px;border-bottom:1px solid var(--linea)}
+.noti:last-child{border-bottom:none}
+.noti .cab{display:flex;gap:9px;align-items:center;margin-bottom:7px;flex-wrap:wrap}
+.noti .liga{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--oro)}
+.noti .fecha{font-size:11px;color:var(--suave)}
+.noti h4{font-family:'Barlow Condensed';font-size:21px;font-weight:700;line-height:1.15}
+.noti p{font-size:14px;color:var(--suave);margin-top:7px;line-height:1.55}
+.noti .cuerpo{font-size:14px;margin-top:9px;line-height:1.65;white-space:pre-wrap}
+.noti a.leer{display:inline-block;margin-top:10px;font-size:13px;font-weight:600}
+.noti img{width:100%;border-radius:11px;margin-top:11px;display:block}
+.pin{font-size:10px;font-weight:700;letter-spacing:.08em;padding:3px 8px;border-radius:999px;background:rgba(212,164,56,.18);color:var(--oro)}
+
+.tliga{width:100%;border-collapse:collapse;font-size:14px}
+.tliga th{font-family:'Barlow Condensed';font-size:12px;letter-spacing:.09em;text-transform:uppercase;color:var(--suave);
+  font-weight:600;padding:10px 6px;border-bottom:1px solid var(--linea);text-align:right}
+.tliga th:nth-child(1),.tliga th:nth-child(2){text-align:left}
+.tliga td{padding:10px 6px;border-bottom:1px solid var(--linea);text-align:right;font-variant-numeric:tabular-nums}
+.tliga td:nth-child(1){width:28px;color:var(--suave);font-family:'Barlow Condensed';font-weight:700;text-align:left}
+.tliga td:nth-child(2){text-align:left;font-weight:600}
+.tliga tr:last-child td{border-bottom:none}
+.tliga tr.zona td:nth-child(1){color:var(--oro)}
+.tliga .pts{font-family:'Barlow Condensed';font-size:17px;font-weight:700;color:var(--oro)}
+
+.calf{display:grid;grid-template-columns:76px 1fr;gap:12px;padding:13px 16px;border-bottom:1px solid var(--linea);align-items:center}
+.calf:last-child{border-bottom:none}
+.calf .cuando{font-family:'Barlow Condensed';font-size:14px;font-weight:600;color:var(--oro);line-height:1.25}
+.calf .juego{font-size:15px;font-weight:600}
+.calf .canal{font-size:12px;color:var(--suave);margin-top:3px}
 @media (prefers-reduced-motion:reduce){*{transition:none !important}}
 </style>
 </head>
@@ -323,6 +357,9 @@ let yo = null, tab = 'boleta', cuenta = null, ligaSel = 'Liga MX';
 let CFG = {};
 let datos = { jornadas:[], jornada:null, partidos:[], boletos:[], pronosticos:[], usuarios:[], depositos:[], retiros:[], movimientos:[] };
 let borrador = {}, jornadaVista = null, avatarNuevo = '⚽', historial = null, aceptoTerm = false;
+let subCancha = 'noticias';
+let titularesRSS = [];
+datos.noticias = []; datos.tablas = []; datos.calendario = [];
 
 /* ---------- Utilidades ---------- */
 const $ = id => document.getElementById(id);
@@ -344,6 +381,8 @@ const esStaff   = () => ['admin','organizador'].includes(yo?.rol);
 const esJugador = u => !['admin','organizador'].includes(u.rol);
 const tituloRol = r => r === 'admin' ? 'Dueño' : (r === 'organizador' ? 'Organizador' : '');
 const terminos  = () => (CFG.terminos && CFG.terminos.trim()) ? CFG.terminos : TERMINOS_BASE;
+const modOn     = m => CFG['mod_'+m] !== 'off';
+const hayCancha = () => modOn('noticias') || modOn('tablas') || modOn('calendario');
 
 /* ============================================================
    PANTALLAS DE ENTRADA
@@ -536,6 +575,17 @@ async function cargar(){
   const mv = await sb.from('movimientos').select('*').eq('usuario_id', yo.id).order('created_at',{ascending:false}).limit(40);
   datos.movimientos = mv.data || [];
 
+  if(hayCancha() || esStaff()){
+    const [nt, tl, cl] = await Promise.all([
+      sb.from('noticias').select('*').order('fijada',{ascending:false}).order('created_at',{ascending:false}).limit(40),
+      sb.from('tablas_liga').select('*'),
+      sb.from('calendario').select('*').order('orden')
+    ]);
+    datos.noticias   = nt.data || [];
+    datos.tablas     = tl.data || [];
+    datos.calendario = cl.data || [];
+  }
+
   if(esStaff()){
     const [dp, rt] = await Promise.all([
       sb.from('depositos').select('*').order('created_at',{ascending:false}).limit(60),
@@ -612,7 +662,9 @@ function armarTabs(){
   const pendVer = datos.usuarios.filter(u => esJugador(u) && !u.verificado).length;
   const pendRet = datos.retiros.filter(r => r.estado === 'pendiente').length;
   const alerta  = esStaff() && (pendDep + pendVer + pendRet) > 0;
-  const t = [['boleta','Boleta'],['tabla','Tabla'],['saldo','Saldo'],['perfil','Perfil']];
+  const t = [['boleta','Boleta'],['tabla','Tabla']];
+  if(hayCancha()) t.push(['cancha','Cancha']);
+  t.push(['saldo','Saldo'],['perfil','Perfil']);
   if(esStaff()) t.push(['admin','Panel']);
   $('tabs').innerHTML = t.map(([k,n]) =>
     `<button class="tab ${tab===k?'on':''}" onclick="irA('${k}')">${n}${k==='admin'&&alerta?'<span class="punto"></span>':''}</button>`).join('');
@@ -624,6 +676,7 @@ function pintar(){
   const v = $('vista');
   if(tab === 'boleta') v.innerHTML = vistaBoleta();
   if(tab === 'tabla')  v.innerHTML = vistaTabla();
+  if(tab === 'cancha') v.innerHTML = vistaCancha();
   if(tab === 'saldo')  v.innerHTML = vistaSaldo();
   if(tab === 'perfil') v.innerHTML = vistaPerfil();
   if(tab === 'admin'){ v.innerHTML = vistaAdmin(); refrescarEquipos(); }
@@ -807,6 +860,233 @@ function compartirTabla(){
   lista.slice(0,20).forEach(f => t += `${f.lugar}. ${f.avatar} ${f.nombre} — ${f.puntos} aciertos${f.premio?` · ${dinero(f.premio)}`:''}\n`);
   if(j.estado === 'abierta') t += `\nCierra ${fechaMX(j.fecha_limite)}. Aún puedes entrar.`;
   window.open('https://wa.me/?text=' + encodeURIComponent(t), '_blank');
+}
+
+
+/* ============================================================
+   CANCHA · noticias, tablas y calendario
+   ============================================================ */
+function vistaCancha(){
+  const disp = [];
+  if(modOn('noticias'))   disp.push(['noticias','Noticias']);
+  if(modOn('tablas'))     disp.push(['tablas','Posiciones']);
+  if(modOn('calendario')) disp.push(['calendario','Calendario']);
+  if(!disp.length) return `<div class="card"><div class="vacio">No hay secciones activas.</div></div>`;
+  if(!disp.some(d => d[0] === subCancha)) subCancha = disp[0][0];
+
+  const nav = disp.length > 1
+    ? `<div class="subtabs">${disp.map(([k,n]) => `<button class="subtab ${subCancha===k?'on':''}" onclick="irCancha('${k}')">${n}</button>`).join('')}</div>`
+    : '';
+
+  let cuerpo = '';
+  if(subCancha === 'noticias')   cuerpo = bloqueNoticias();
+  if(subCancha === 'tablas')     cuerpo = bloqueTablas();
+  if(subCancha === 'calendario') cuerpo = bloqueCalendario();
+  return nav + cuerpo;
+}
+function irCancha(k){ subCancha = k; pintar(); }
+
+function bloqueNoticias(){
+  const lista = datos.noticias.filter(n => n.publicada);
+  if(!lista.length) return `<div class="card"><div class="vacio">Todavía no hay noticias publicadas.</div></div>`;
+  return `<div class="card">${lista.map(n => `
+    <article class="noti">
+      <div class="cab">
+        ${n.liga ? `<span class="liga">${esc(n.liga)}</span>` : ''}
+        <span class="fecha">${fechaCorta(n.created_at)}${n.fuente?' · '+esc(n.fuente):''}</span>
+        ${n.fijada ? '<span class="pin">Fijada</span>' : ''}
+      </div>
+      <h4>${esc(n.titulo)}</h4>
+      ${n.resumen ? `<p>${esc(n.resumen)}</p>` : ''}
+      ${n.imagen ? `<img src="${esc(n.imagen)}" alt="" loading="lazy" onerror="this.remove()">` : ''}
+      ${n.cuerpo ? `<div class="cuerpo">${esc(n.cuerpo)}</div>` : ''}
+      ${n.url ? `<a class="leer" href="${esc(n.url)}" target="_blank" rel="noopener">Leer la nota completa</a>` : ''}
+      ${esStaff() ? `<div style="display:flex;gap:8px;margin-top:12px">
+        <button class="btn chico fantasma" onclick="fijarNoticia('${n.id}',${!n.fijada})">${n.fijada?'Quitar de fijadas':'Fijar arriba'}</button>
+        <button class="btn chico fantasma" onclick="borrarNoticia('${n.id}')">Borrar</button>
+      </div>` : ''}
+    </article>`).join('')}</div>`;
+}
+
+function bloqueTablas(){
+  if(!datos.tablas.length) return `<div class="card"><div class="vacio">Todavía no hay tablas cargadas.</div></div>`;
+  const orden = [...datos.tablas].sort((a,b) => ORDEN_LIGAS.indexOf(a.liga) - ORDEN_LIGAS.indexOf(b.liga));
+  return orden.map(t => {
+    const filas = (t.datos || []);
+    if(!filas.length) return '';
+    return `<div class="card">
+      <div class="card-cab"><h3>${esc(abrevia(t.liga))}</h3><em>${fechaCorta(t.updated_at)}</em></div>
+      <div style="padding:0 16px 8px;overflow-x:auto">
+        <table class="tliga">
+          <thead><tr><th>#</th><th>Equipo</th><th>JJ</th><th>DIF</th><th>PTS</th></tr></thead>
+          <tbody>${filas.map((f,i) => `
+            <tr class="${i<8?'zona':''}">
+              <td>${i+1}</td><td>${esc(f.equipo)}</td>
+              <td>${f.jj ?? '—'}</td><td>${f.dif==null?'—':(f.dif>0?'+'+f.dif:f.dif)}</td>
+              <td class="pts">${f.pts ?? '—'}</td>
+            </tr>`).join('')}</tbody>
+        </table>
+      </div>
+      ${t.nota ? `<div style="padding:0 16px 14px" class="mini">${esc(t.nota)}</div>` : ''}
+    </div>`;
+  }).join('') || `<div class="card"><div class="vacio">Las tablas están vacías.</div></div>`;
+}
+
+function bloqueCalendario(){
+  if(!datos.calendario.length) return `<div class="card"><div class="vacio">Todavía no hay partidos en el calendario.</div></div>`;
+  const g = [];
+  datos.calendario.forEach(p => {
+    const l = p.liga || 'Otra';
+    let b = g.find(x => x.liga === l);
+    if(!b){ b = { liga:l, ps:[] }; g.push(b); }
+    b.ps.push(p);
+  });
+  g.sort((a,b) => ORDEN_LIGAS.indexOf(a.liga) - ORDEN_LIGAS.indexOf(b.liga));
+  return `<div class="card">${g.map(x => `
+    <div class="grupo">${esc(abrevia(x.liga))}</div>
+    ${x.ps.map(p => `
+      <div class="calf">
+        <div class="cuando">${esc(p.fecha || '—')}</div>
+        <div>
+          <div class="juego">${esc(p.local)} <span style="color:var(--suave);font-weight:400">vs</span> ${esc(p.visita)}</div>
+          ${p.canal ? `<div class="canal">${esc(p.canal)}</div>` : ''}
+        </div>
+      </div>`).join('')}`).join('')}</div>`;
+}
+
+async function fijarNoticia(id, v){
+  if(!esStaff()) return;
+  await sb.from('noticias').update({ fijada:v }).eq('id', id);
+  await cargar();
+}
+async function borrarNoticia(id){
+  if(!esStaff()) return;
+  if(!confirm('¿Borrar esta noticia?')) return;
+  await sb.from('noticias').delete().eq('id', id);
+  await cargar();
+}
+
+/* ---------- Publicar / capturar desde el panel ---------- */
+async function publicarNoticia(){
+  if(!esStaff()) return;
+  const titulo = $('ntTitulo').value.trim();
+  if(titulo.length < 6) return aviso('ntMsg','El titular quedó muy corto.');
+  const { error } = await sb.from('noticias').insert({
+    titulo,
+    resumen: $('ntResumen').value.trim() || null,
+    cuerpo:  $('ntCuerpo').value.trim() || null,
+    liga:    $('ntLiga').value,
+    fuente:  $('ntFuente').value.trim() || null,
+    url:     $('ntUrl').value.trim() || null,
+    imagen:  $('ntImagen').value.trim() || null,
+    autor_id: yo.id
+  });
+  if(error) return aviso('ntMsg','No se pudo publicar: ' + error.message);
+  ['ntTitulo','ntResumen','ntCuerpo','ntFuente','ntUrl','ntImagen'].forEach(k => { if($(k)) $(k).value=''; });
+  await cargar();
+  aviso('ntMsg','Noticia publicada.','ok');
+}
+
+/* Pega la tabla como texto y la app la interpreta.
+   Acepta: "1 América 10 8 22", "América, 10, +8, 22", "1. América 22" */
+function parseTabla(txt){
+  const filas = [];
+  txt.split('\n').forEach(ln => {
+    let l = ln.trim();
+    if(!l) return;
+    l = l.replace(/^\d+[.)\-]?\s+/, '');           // quita el lugar
+    const nums = l.match(/-?\+?\d+/g) || [];
+    const equipo = l.replace(/[,;|]/g,' ').replace(/-?\+?\d+/g,'').replace(/\s+/g,' ').trim();
+    if(!equipo || equipo.length < 2) return;
+    const n = nums.map(x => parseInt(x.replace('+',''),10));
+    let jj=null, dif=null, pts=null;
+    if(n.length >= 3){ jj=n[0]; dif=n[n.length-2]; pts=n[n.length-1]; }
+    else if(n.length === 2){ jj=n[0]; pts=n[1]; }
+    else if(n.length === 1){ pts=n[0]; }
+    filas.push({ equipo, jj, dif, pts });
+  });
+  return filas;
+}
+
+async function guardarTablaLiga(){
+  if(!esStaff()) return;
+  const liga = $('tlLiga').value;
+  const filas = parseTabla($('tlTexto').value);
+  if(filas.length < 2) return aviso('tlMsg','No pude leer la tabla. Pon un equipo por renglón.');
+  const { error } = await sb.from('tablas_liga').upsert({
+    liga, datos:filas, nota:$('tlNota').value.trim() || null,
+    actualizado:yo.id, updated_at:new Date().toISOString()
+  }, { onConflict:'liga' });
+  if(error) return aviso('tlMsg','No se pudo guardar: ' + error.message);
+  await cargar();
+  aviso('tlMsg', `Tabla de ${liga} guardada con ${filas.length} equipos.`, 'ok');
+}
+
+/* Pega el calendario: "Sáb 19:00 | América vs Chivas | TUDN" */
+async function guardarCalendario(){
+  if(!esStaff()) return;
+  const liga = $('clLiga').value;
+  const lineas = $('clTexto').value.split('\n').map(x => x.trim()).filter(Boolean);
+  const filas = [];
+  lineas.forEach((ln, i) => {
+    const partes = ln.split('|').map(x => x.trim());
+    let fecha = '', juego = '', canal = '';
+    if(partes.length >= 2){ fecha = partes[0]; juego = partes[1]; canal = partes[2] || ''; }
+    else { juego = partes[0]; }
+    const m = juego.split(/\s+vs\.?\s+|\s+-\s+/i);
+    if(m.length < 2) return;
+    filas.push({ liga, fecha:fecha||null, local:m[0].trim(), visita:m[1].trim(), canal:canal||null, orden:i+1 });
+  });
+  if(!filas.length) return aviso('clMsg','No pude leer ningún partido. Usa el formato: Sáb 19:00 | América vs Chivas');
+  await sb.from('calendario').delete().eq('liga', liga);
+  const { error } = await sb.from('calendario').insert(filas);
+  if(error) return aviso('clMsg','No se pudo guardar: ' + error.message);
+  await cargar();
+  aviso('clMsg', `Calendario de ${liga} guardado con ${filas.length} partidos.`, 'ok');
+}
+
+/* Importador de titulares por RSS */
+async function traerTitulares(){
+  if(!esStaff()) return;
+  const fuentes = ($('rsUrl').value || '').split('\n').map(x => x.trim()).filter(Boolean);
+  if(!fuentes.length) return aviso('rsMsg','Pega al menos una dirección RSS.');
+  aviso('rsMsg','Buscando titulares…','info');
+  titularesRSS = [];
+  for(const f of fuentes){
+    try{
+      const r = await fetch('https://api.allorigins.win/raw?url=' + encodeURIComponent(f));
+      const xml = new DOMParser().parseFromString(await r.text(), 'text/xml');
+      const items = [...xml.querySelectorAll('item, entry')].slice(0, 8);
+      const medio = xml.querySelector('channel > title, feed > title')?.textContent?.trim() || '';
+      items.forEach(it => titularesRSS.push({
+        titulo: it.querySelector('title')?.textContent?.trim() || '',
+        url: it.querySelector('link')?.getAttribute('href') || it.querySelector('link')?.textContent?.trim() || '',
+        resumen: (it.querySelector('description, summary')?.textContent || '').replace(/<[^>]*>/g,'').trim().slice(0,240),
+        fuente: medio
+      }));
+    }catch(e){ /* una fuente falló, seguimos con las demás */ }
+  }
+  await sb.from('config').upsert({ clave:'rss_fuentes', valor:fuentes.join('\n') }, { onConflict:'clave' });
+  if(!titularesRSS.length) return aviso('rsMsg','No se pudo leer ninguna fuente. Revisa la dirección o publica la noticia a mano.');
+  aviso('rsMsg', `${titularesRSS.length} titulares encontrados. Escoge cuáles publicar.`, 'ok');
+  pintar();
+}
+
+async function publicarTitular(i){
+  const t = titularesRSS[i]; if(!t) return;
+  const { error } = await sb.from('noticias').insert({
+    titulo:t.titulo, resumen:t.resumen || null, url:t.url || null,
+    fuente:t.fuente || null, liga:$('ntLiga')?.value || null, autor_id:yo.id
+  });
+  if(error) return alert('No se pudo publicar: ' + error.message);
+  titularesRSS.splice(i,1);
+  await cargar();
+}
+
+async function cambiarModulo(m, on){
+  if(!esDueno()) return;
+  await sb.from('config').upsert({ clave:'mod_'+m, valor: on ? 'on' : 'off' }, { onConflict:'clave' });
+  await cargar();
 }
 
 /* ============================================================
@@ -1163,6 +1443,96 @@ function vistaAdmin(){
     </div>
   </div>
 
+
+  ${esStaff() ? `
+  <div class="seccion">
+    <h3>Publicar noticia</h3>
+    <p>Aparece en la pestaña Cancha de todos los participantes.</p>
+    <div class="card"><div class="card-cuerpo">
+      <div class="campo"><label for="ntTitulo">Titular</label>
+        <input id="ntTitulo" placeholder="Chivas gana el clásico y se mete a liguilla"></div>
+      <div class="fila2">
+        <div class="campo"><label for="ntLiga">Liga</label>
+          <select id="ntLiga">${ORDEN_LIGAS.map(l => `<option>${l}</option>`).join('')}</select></div>
+        <div class="campo"><label for="ntFuente">Fuente</label>
+          <input id="ntFuente" placeholder="ESPN, Récord, propia"></div>
+      </div>
+      <div class="campo"><label for="ntResumen">Resumen corto</label>
+        <input id="ntResumen" placeholder="Una línea que resuma la nota"></div>
+      <div class="campo"><label for="ntCuerpo">Nota completa (opcional)</label>
+        <textarea id="ntCuerpo" style="min-height:110px" placeholder="Escribe aquí si quieres publicar la nota completa"></textarea></div>
+      <div class="fila2">
+        <div class="campo"><label for="ntUrl">Liga al artículo (opcional)</label><input id="ntUrl" placeholder="https://"></div>
+        <div class="campo"><label for="ntImagen">Imagen (opcional)</label><input id="ntImagen" placeholder="https://"></div>
+      </div>
+      <button class="btn" onclick="publicarNoticia()">Publicar noticia</button>
+      <div id="ntMsg"></div>
+    </div></div>
+  </div>
+
+  <div class="seccion">
+    <h3>Importar titulares</h3>
+    <p>Pega direcciones RSS de medios deportivos, una por renglón.</p>
+    <div class="card"><div class="card-cuerpo">
+      <div class="campo"><label for="rsUrl">Fuentes RSS</label>
+        <textarea id="rsUrl" style="min-height:90px" placeholder="https://www.espn.com.mx/espn/rss/futbol/news">${esc(CFG.rss_fuentes||'')}</textarea></div>
+      <button class="btn fantasma" onclick="traerTitulares()">Buscar titulares</button>
+      <div id="rsMsg"></div>
+      ${titularesRSS.length ? `<div class="card" style="margin-top:14px">${titularesRSS.map((t,i) => `
+        <div class="jrow">
+          <div><div class="t">${esc(t.titulo)}</div><div class="s">${esc(t.fuente||'')}</div></div>
+          <button class="btn chico" onclick="publicarTitular(${i})">Publicar</button>
+        </div>`).join('')}</div>` : ''}
+      <p class="mini">Los titulares se traen tal cual del medio. Publica el titular y el enlace, y escribe tú el resumen si quieres agregar algo.</p>
+    </div></div>
+  </div>
+
+  <div class="seccion">
+    <h3>Tabla de posiciones</h3>
+    <p>Copia la tabla de donde la consultes y pégala aquí. Un equipo por renglón.</p>
+    <div class="card"><div class="card-cuerpo">
+      <div class="campo"><label for="tlLiga">Liga</label>
+        <select id="tlLiga">${ORDEN_LIGAS.map(l => `<option>${l}</option>`).join('')}</select></div>
+      <div class="campo"><label for="tlTexto">Pega la tabla</label>
+        <textarea id="tlTexto" placeholder="1 América 10 8 22&#10;2 Toluca 10 6 20&#10;3 Cruz Azul 10 5 19"></textarea></div>
+      <div class="campo"><label for="tlNota">Nota al pie (opcional)</label>
+        <input id="tlNota" placeholder="Actualizada a la jornada 10"></div>
+      <button class="btn" onclick="guardarTablaLiga()">Guardar tabla</button>
+      <div id="tlMsg"></div>
+      <p class="mini">Lee el nombre del equipo y los números en este orden: juegos jugados, diferencia de goles y puntos. Si solo pegas equipo y puntos, también funciona.</p>
+    </div></div>
+  </div>
+
+  <div class="seccion">
+    <h3>Calendario</h3>
+    <p>Los próximos partidos que quieras mostrar. Reemplaza el calendario anterior de esa liga.</p>
+    <div class="card"><div class="card-cuerpo">
+      <div class="campo"><label for="clLiga">Liga</label>
+        <select id="clLiga">${ORDEN_LIGAS.map(l => `<option>${l}</option>`).join('')}</select></div>
+      <div class="campo"><label for="clTexto">Un partido por renglón</label>
+        <textarea id="clTexto" placeholder="Sáb 19:00 | América vs Chivas | TUDN&#10;Sáb 21:00 | Tigres vs Monterrey | ESPN&#10;Dom 12:00 | Pumas vs Toluca"></textarea></div>
+      <button class="btn" onclick="guardarCalendario()">Guardar calendario</button>
+      <div id="clMsg"></div>
+      <p class="mini">Formato: día y hora, barra, el partido con "vs", barra, canal. El canal es opcional.</p>
+    </div></div>
+  </div>` : ''}
+
+  ${esDueno() ? `
+  <div class="seccion">
+    <h3>Módulos de la app</h3>
+    <p>Prende o apaga secciones sin tocar el código.</p>
+    <div class="card">
+      ${[['noticias','Noticias'],['tablas','Tablas de posiciones'],['calendario','Calendario']].map(([k,n]) => `
+        <div class="jrow">
+          <div><div class="t">${n}</div><div class="s">${modOn(k)?'Visible para todos':'Oculta'}</div></div>
+          <label class="switch">
+            <input type="checkbox" ${modOn(k)?'checked':''} onchange="cambiarModulo('${k}',this.checked)">
+            <span>${modOn(k)?'Encendido':'Apagado'}</span>
+          </label>
+        </div>`).join('')}
+    </div>
+    <p class="mini">Si apagas las tres, la pestaña Cancha desaparece del menú.</p>
+  </div>` : ''}
   ${esDueno() ? `
   <div class="seccion">
     <h3>Datos de cobro</h3>
