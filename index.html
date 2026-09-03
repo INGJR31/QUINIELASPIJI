@@ -144,6 +144,11 @@ a{color:var(--ambar)}
 .avatares{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
 .av-op{width:46px;height:46px;border-radius:10px;border:1.5px solid var(--raya);font-size:24px;display:grid;place-items:center}
 .av-op.sel{border-color:var(--ambar);background:rgba(233,161,59,.16)}
+.ver-caja{text-align:center;padding:26px 20px}
+.ver-caja .cod{font-family:'Barlow Condensed';font-size:52px;font-weight:700;color:var(--ambar);letter-spacing:.14em;line-height:1;margin:14px 0}
+.lada{display:grid;grid-template-columns:110px 1fr;gap:10px}
+.chip-ver{font-size:11px;font-weight:700;letter-spacing:.06em;padding:2px 7px;border-radius:4px;background:rgba(79,169,107,.18);color:var(--verde);margin-left:6px}
+.chip-no{font-size:11px;font-weight:700;letter-spacing:.06em;padding:2px 7px;border-radius:4px;background:rgba(193,70,47,.18);color:var(--roja);margin-left:6px}
 @media (prefers-reduced-motion:reduce){*{transition:none !important}}
 </style>
 </head>
@@ -171,8 +176,11 @@ a{color:var(--ambar)}
     <div id="formRegistro" class="hide">
       <div class="campo"><label for="rgNombre">Tu nombre</label>
         <input id="rgNombre" placeholder="Como quieres salir en la tabla"></div>
-      <div class="campo"><label for="rgWa">WhatsApp</label>
-        <input id="rgWa" inputmode="tel" placeholder="9181234567"></div>
+      <div class="campo"><label for="rgWa">WhatsApp (número real, te va a llegar la verificación)</label>
+        <div class="lada">
+          <select id="rgPais"><option value="52">🇲🇽 +52</option><option value="1">🇺🇸 +1</option></select>
+          <input id="rgWa" inputmode="tel" maxlength="14" placeholder="9181234567">
+        </div></div>
       <div class="campo"><label for="rgPin">Crea un PIN de 4 dígitos</label>
         <input id="rgPin" type="password" inputmode="numeric" maxlength="4" placeholder="••••"></div>
       <div class="campo"><label>Escoge tu figura</label>
@@ -206,12 +214,13 @@ a{color:var(--ambar)}
 /* ============================================================
    CONFIGURACIÓN — pon aquí tus llaves de Supabase
    ============================================================ */
-const SUPABASE_URL  = "https://TU-PROYECTO.supabase.co";
-const SUPABASE_ANON = "TU_ANON_KEY";
+const SUPABASE_URL  = "https://xuefkdynywuajknfluzh.supabase.co";
+const SUPABASE_ANON = "sb_publishable_dF4SofCAvQ6VyDsuiFaSbw_rYcPiOx4";
 
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
 
 const META_PARTIDOS = 10;
+let WHATSAPP_ORG = '';
 const AVATARES = ['⚽','🏆','🔥','🐓','🐂','🦅','🐐','🎯','👑','🥊','🐎','⭐','💥','🌵','🧢','🍺'];
 
 /* ---------- Catálogo de equipos (Liga MX al Apertura 2026) ---------- */
@@ -234,6 +243,7 @@ let yo = null, tab = 'boleta';
 let datos = { jornadas:[], jornada:null, partidos:[], boletos:[], pronosticos:[], usuarios:[] };
 let borrador = {}, jornadaVista = null, cuenta = null, ligaSel = 'Liga MX';
 let avatarNuevo = '⚽';
+let porVerificar = null;   // usuario recién creado, esperando verificación
 let historial = null;   // estadísticas del perfil
 
 /* ---------- Utilidades ---------- */
@@ -244,6 +254,11 @@ const lee    = k =>{ try{ return localStorage.getItem(k) }catch(e){ return (wind
 const borra  = k =>{ try{ localStorage.removeItem(k) }catch(e){ if(window.__m) delete window.__m[k] } };
 const dinero = n => '$' + Number(n||0).toFixed(2);
 const fechaMX = d => new Date(d).toLocaleString('es-MX',{weekday:'short',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
+const soloD = s => String(s||'').replace(/\D/g,'');
+const d10 = s => soloD(s).slice(-10);
+const bonito = w => { const d = d10(w); return d.length===10 ? `${d.slice(0,3)} ${d.slice(3,6)} ${d.slice(6)}` : w; };
+const nuevoCodigo = () => String(Math.floor(1000 + Math.random()*9000));
+
 function aviso(el, texto, tipo='err'){ const e=$(el); if(e) e.innerHTML = texto ? `<div class="aviso ${tipo}">${esc(texto)}</div>` : ''; }
 
 /* ============================================================
@@ -263,26 +278,68 @@ function elegirAvatar(a){ avatarNuevo = a; pintarAvatares(); }
 
 async function registrar(){
   const nombre = $('rgNombre').value.trim();
-  const wa     = $('rgWa').value.replace(/\D/g,'');
+  const pais   = $('rgPais').value;
+  const num    = d10($('rgWa').value);
   const pin    = $('rgPin').value.trim();
+
   if(nombre.length < 3) return aviso('rgMsg','Escribe tu nombre completo.');
-  if(wa.length < 10)    return aviso('rgMsg','El WhatsApp necesita 10 dígitos.');
+  if(num.length !== 10) return aviso('rgMsg','El número debe tener 10 dígitos, sin lada de país.');
+  if(/^(\d)\1{9}$/.test(num)) return aviso('rgMsg','Ese número no es real. Pon tu WhatsApp de verdad.');
+  if(pais === '52' && num[0] === '0') return aviso('rgMsg','Un número de México no empieza con 0.');
   if(pin.length !== 4)  return aviso('rgMsg','El PIN debe tener 4 dígitos.');
 
-  const { data:existe } = await sb.from('usuarios').select('id').eq('whatsapp', wa).maybeSingle();
+  const completo = pais + num;
+  const { data:existe } = await sb.from('usuarios').select('id').ilike('whatsapp','%'+num).maybeSingle();
   if(existe) return aviso('rgMsg','Ese WhatsApp ya tiene perfil. Entra con tu PIN.');
 
-  const { data, error } = await sb.from('usuarios')
-    .insert({ nombre, whatsapp:wa, pin, rol:'jugador', avatar:avatarNuevo }).select().single();
+  const codigo = nuevoCodigo();
+  const { data, error } = await sb.from('usuarios').insert({
+    nombre, whatsapp:completo, pais, pin, rol:'jugador',
+    avatar:avatarNuevo, verificado:false, codigo_verif:codigo
+  }).select().single();
   if(error) return aviso('rgMsg','No se pudo crear el perfil: ' + error.message);
-  iniciarSesion(data);
+
+  await traerConfig();
+  porVerificar = data;
+  pantallaVerificar();
+}
+
+function pantallaVerificar(){
+  const u = porVerificar;
+  const texto = `Soy ${u.nombre}. Mi código para las QUINIELAS EL PIJI ACHOTERO es ${u.codigo_verif}`;
+  const link = WHATSAPP_ORG
+    ? `https://wa.me/${WHATSAPP_ORG}?text=${encodeURIComponent(texto)}`
+    : `https://wa.me/?text=${encodeURIComponent(texto)}`;
+
+  $('entrada').innerHTML = `
+  <div class="entrada-caja">
+    <div class="logo-grande">
+      <div class="balon">${u.avatar||'⚽'}</div>
+      <h1>Verifica tu<br>WhatsApp</h1>
+      <p>${bonito(u.whatsapp)}</p>
+    </div>
+    <div class="tarjeta ver-caja">
+      <span style="font-size:13px;color:var(--cal-suave)">Tu código</span>
+      <div class="cod">${u.codigo_verif}</div>
+      <p style="font-size:14px;color:var(--cal-suave)">Mándalo por WhatsApp al organizador desde este mismo teléfono. En cuanto lo apruebe, tu perfil queda activo.</p>
+      <button class="btn" onclick="window.open('${link}','_blank')">Mandar código por WhatsApp</button>
+      <button class="btn fantasma" onclick="location.reload()">Ya lo mandé, entrar</button>
+    </div>
+    <p class="cambio">Tu perfil ya quedó guardado. Puedes entrar con tu número y PIN, pero no cuenta tu boleta hasta que te verifiquen.</p>
+  </div>`;
 }
 
 async function entrar(){
   const wa  = $('lgWa').value.trim(), pin = $('lgPin').value.trim();
   if(!wa || !pin) return aviso('lgMsg','Faltan tus datos.');
-  const clave = /^\d+$/.test(wa) ? wa.replace(/\D/g,'') : wa.toUpperCase();
-  const { data } = await sb.from('usuarios').select('*').eq('whatsapp', clave).maybeSingle();
+  let data = null;
+  if(/\d/.test(wa)){
+    const r = await sb.from('usuarios').select('*').ilike('whatsapp','%'+d10(wa));
+    data = (r.data || [])[0] || null;
+  } else {
+    const r = await sb.from('usuarios').select('*').eq('whatsapp', wa.toUpperCase()).maybeSingle();
+    data = r.data;
+  }
   if(!data)            return aviso('lgMsg','No encontramos ese perfil.');
   if(data.pin !== pin) return aviso('lgMsg','PIN incorrecto.');
   if(!data.activo)     return aviso('lgMsg','Tu perfil está suspendido. Habla con el organizador.');
@@ -311,7 +368,13 @@ async function sesionGuardada(){
 /* ============================================================
    CARGA
    ============================================================ */
+async function traerConfig(){
+  const { data } = await sb.from('config').select('*').eq('clave','whatsapp_org').maybeSingle();
+  WHATSAPP_ORG = data?.valor || '';
+}
+
 async function cargar(){
+  await traerConfig();
   const { data:jornadas } = await sb.from('jornadas').select('*').order('created_at',{ascending:false});
   datos.jornadas = jornadas || [];
   if(!jornadaVista || !datos.jornadas.some(j => j.id === jornadaVista)){
@@ -320,7 +383,7 @@ async function cargar(){
   }
   datos.jornada = datos.jornadas.find(j => j.id === jornadaVista) || null;
 
-  const { data:us } = await sb.from('usuarios').select('id,nombre,whatsapp,rol,activo,avatar');
+  const { data:us } = await sb.from('usuarios').select('id,nombre,whatsapp,rol,activo,avatar,verificado,codigo_verif');
   datos.usuarios = us || [];
 
   if(datos.jornada){
@@ -349,6 +412,7 @@ const usuarioDe = id => datos.usuarios.find(u => u.id === id) || {};
 const nombreDe = id => usuarioDe(id).nombre || 'Jugador';
 const avatarDe = id => usuarioDe(id).avatar || '⚽';
 const waDe     = id => usuarioDe(id).whatsapp || '';
+const verifDe  = id => !!usuarioDe(id).verificado;
 
 function puntosDe(boletoId){
   let pts = 0;
@@ -367,7 +431,7 @@ function bolsa(){
 /* Gana el que más aciertos tenga. Empate en aciertos = mismo lugar y premio dividido. */
 function tablaPosiciones(){
   const j = datos.jornada;
-  const lista = datos.boletos.map(b => ({ ...b, nombre:nombreDe(b.usuario_id), avatar:avatarDe(b.usuario_id), puntos:puntosDe(b.id) }))
+  const lista = datos.boletos.map(b => ({ ...b, nombre:nombreDe(b.usuario_id), avatar:avatarDe(b.usuario_id), verif:verifDe(b.usuario_id), puntos:puntosDe(b.id) }))
     .sort((a,b) => b.puntos - a.puntos || new Date(a.created_at) - new Date(b.created_at));
   const total = bolsa(), pcts = [j?.pct1||0, j?.pct2||0, j?.pct3||0];
   let lugar = 0, prev = null, i = 0;
@@ -493,6 +557,7 @@ function vistaBoleta(){
         ${faltan ? `Te faltan ${faltan} partidos` : (mio ? 'Actualizar mi boleta' : 'Guardar mi boleta')}
       </button>
       <div id="bolMsg"></div>
+      ${!yo.verificado ? bannerVerificar() : ''}
       ${mio && !mio.pagado ? `<div class="aviso info">Tu boleta está registrada pero aún no aparece como pagada. Manda tus ${dinero(j.costo)} al organizador para entrar al reparto.</div>` : ''}
       <p class="mini">Gana el que más aciertos junte. Puedes cambiar tus pronósticos hasta que cierre el reloj.</p>`;
   } else if(mio){
@@ -506,6 +571,17 @@ function vistaBoleta(){
       <div class="boleta-cab"><h3>${mio?'Mi boleta':'Llena tu boleta'}</h3><em>L · empate · V</em></div>
       ${cuerpo}
     </div>${pie}`;
+}
+
+function bannerVerificar(){
+  const texto = `Soy ${yo.nombre}. Mi código para las QUINIELAS EL PIJI ACHOTERO es ${yo.codigo_verif||''}`;
+  const link = WHATSAPP_ORG ? `https://wa.me/${WHATSAPP_ORG}?text=${encodeURIComponent(texto)}`
+                            : `https://wa.me/?text=${encodeURIComponent(texto)}`;
+  return `<div class="aviso err">
+    Tu WhatsApp todavía no está verificado, así que tu boleta no cuenta.
+    Manda tu código <b>${esc(yo.codigo_verif||'')}</b> al organizador.
+    <button class="btn chico" style="margin-top:10px" onclick="window.open('${link}','_blank')">Mandar mi código</button>
+  </div>`;
 }
 
 function marcar(id, v){ borrador[id] = v; pintar(); }
@@ -538,7 +614,7 @@ function vistaTabla(){
     <div class="pos ${f.lugar===1?'p1':''}">
       <div class="lug">${f.lugar}</div>
       <div class="av">${f.avatar}</div>
-      <div class="nom">${esc(f.nombre)}${f.usuario_id===yo.id?' · tú':''}${!f.pagado?'<small class="deuda">Sin pagar</small>':''}</div>
+      <div class="nom">${esc(f.nombre)}${f.usuario_id===yo.id?' · tú':''}${!f.verif?'<small class="deuda">Sin verificar</small>':(!f.pagado?'<small class="deuda">Sin pagar</small>':'')}</div>
       <div class="pts">${f.puntos}</div>
       <div class="prem">${f.premio?dinero(f.premio):''}</div>
     </div>`).join('');
@@ -633,11 +709,13 @@ function vistaPerfil(){
     </div>`).join('');
 
   return `
+  ${!yo.verificado ? bannerVerificar() : ''}
   <div class="perfil-cab">
     <div class="perfil-av">${yo.avatar || '⚽'}</div>
     <div>
       <h2>${esc(yo.nombre)}</h2>
-      <p>${esc(yo.whatsapp)}${yo.rol==='admin'?' · organizador':''}</p>
+      <p>${bonito(yo.whatsapp)}${yo.rol==='admin'?' · organizador':''}
+        <span class="${yo.verificado?'chip-ver':'chip-no'}">${yo.verificado?'VERIFICADO':'SIN VERIFICAR'}</span></p>
     </div>
   </div>
 
@@ -723,6 +801,9 @@ async function verJornada(id){ jornadaVista = id; tab = 'boleta'; armarTabs(); a
    ============================================================ */
 function vistaAdmin(){
   const j = datos.jornada;
+  const jugadores  = datos.usuarios.filter(u => u.rol !== 'admin');
+  const pendientes = jugadores.filter(u => !u.verificado);
+  const verificados= jugadores.filter(u => u.verificado);
   return `
   <div class="seccion">
     <h3>Nueva jornada</h3>
@@ -747,16 +828,66 @@ function vistaAdmin(){
   </div>
   ${j ? panelJornada(j) : ''}
   <div class="seccion">
-    <h3>Jugadores registrados</h3>
-    <p>${datos.usuarios.filter(u => u.rol !== 'admin').length} perfiles creados.</p>
+    <h3>Tu WhatsApp de organizador</h3>
+    <p>A este número llegan los códigos de verificación de los jugadores.</p>
+    <div class="tarjeta">
+      <div class="campo"><label for="cfWa">Número con lada de país</label>
+        <input id="cfWa" inputmode="tel" value="${esc(WHATSAPP_ORG)}" placeholder="529181234567"></div>
+      <button class="btn" onclick="guardarWaOrg()">Guardar número</button>
+      <div id="cfMsg"></div>
+      <p class="mini">Ejemplo México: 52 + 10 dígitos. Ejemplo Estados Unidos: 1 + 10 dígitos. Sin espacios ni signo de más.</p>
+    </div>
+  </div>
+
+  ${pendientes.length ? `
+  <div class="seccion">
+    <h3>Por verificar (${pendientes.length})</h3>
+    <p>Compara el código que te llegó por WhatsApp con el que aparece aquí. Si coincide, el número es real.</p>
     <div class="tabla">
-      ${datos.usuarios.filter(u => u.rol !== 'admin').map(u => `
+      ${pendientes.map(u => `
         <div class="jrow">
-          <div><div class="t">${u.avatar||'⚽'} ${esc(u.nombre)}</div><div class="s">${esc(u.whatsapp)}</div></div>
+          <div>
+            <div class="t">${u.avatar||'⚽'} ${esc(u.nombre)}</div>
+            <div class="s">${bonito(u.whatsapp)} · código <b style="color:var(--ambar)">${esc(u.codigo_verif||'—')}</b></div>
+          </div>
+          <div style="display:flex;gap:8px">
+            <button class="btn chico" onclick="verificarJugador('${u.id}',true)">Aprobar</button>
+            <button class="btn chico fantasma" onclick="verificarJugador('${u.id}',false)">Borrar</button>
+          </div>
+        </div>`).join('')}
+    </div>
+  </div>` : ''}
+
+  <div class="seccion">
+    <h3>Jugadores verificados</h3>
+    <p>${verificados.length} perfiles activos.</p>
+    <div class="tabla">
+      ${verificados.map(u => `
+        <div class="jrow">
+          <div><div class="t">${u.avatar||'⚽'} ${esc(u.nombre)}</div><div class="s">${bonito(u.whatsapp)}</div></div>
           <button class="btn chico fantasma" onclick="alternarJugador('${u.id}',${u.activo})">${u.activo?'Suspender':'Reactivar'}</button>
-        </div>`).join('') || '<div class="vacio">Nadie ha creado perfil todavía.</div>'}
+        </div>`).join('') || '<div class="vacio">Todavía no hay perfiles verificados.</div>'}
     </div>
   </div>`;
+}
+
+async function guardarWaOrg(){
+  const n = soloD($('cfWa').value);
+  if(n.length < 11) return aviso('cfMsg','Falta la lada de país. México va con 52 al principio.');
+  const { error } = await sb.from('config').update({ valor:n }).eq('clave','whatsapp_org');
+  if(error) return aviso('cfMsg','No se pudo guardar: ' + error.message);
+  WHATSAPP_ORG = n;
+  aviso('cfMsg','Número guardado.','ok');
+}
+
+async function verificarJugador(id, aprobar){
+  if(aprobar){
+    await sb.from('usuarios').update({ verificado:true }).eq('id', id);
+  } else {
+    if(!confirm('¿Borrar este perfil? Se va junto con sus boletas.')) return;
+    await sb.from('usuarios').delete().eq('id', id);
+  }
+  await cargar();
 }
 
 function panelJornada(j){
@@ -786,7 +917,7 @@ function panelJornada(j){
   const boletos = datos.boletos.map(b => `
     <div class="jrow">
       <div><div class="t">${avatarDe(b.usuario_id)} ${esc(nombreDe(b.usuario_id))}</div>
-        <div class="s">${esc(waDe(b.usuario_id))} · ${puntosDe(b.id)} aciertos</div></div>
+        <div class="s">${bonito(waDe(b.usuario_id))} · ${puntosDe(b.id)} aciertos${!verifDe(b.usuario_id)?' · SIN VERIFICAR':''}</div></div>
       <label class="switch">
         <input type="checkbox" ${b.pagado?'checked':''} onchange="marcarPago('${b.id}',this.checked)">
         <span>${b.pagado?'Pagó':'Debe'}</span>
