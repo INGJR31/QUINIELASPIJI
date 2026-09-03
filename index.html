@@ -10,114 +10,219 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 :root{
-  --cancha:#12301F; --cancha-2:#0B2016; --raya:#1C4630;
-  --cal:#F4F6F1; --cal-suave:rgba(244,246,241,.58); --cal-tenue:rgba(244,246,241,.22);
-  --ambar:#E9A13B; --roja:#C1462F; --verde:#4FA96B; --r:10px;
+  /* base: azul noche para que el contenido se lea sobre las banderas */
+  --cancha:#132539; --cancha-2:#0A1626; --raya:#20385A;
+  --cal:#F5F3EE; --cal-suave:rgba(245,243,238,.60); --cal-tenue:rgba(245,243,238,.20);
+  --ambar:#E8B33C; --ambar-hondo:#A97C16;
+  --roja:#CE1126; --verde:#007A4D;
+  --verde-mx:#006847; --rojo-mx:#CE1126;
+  --azul-us:#0A3161; --rojo-us:#B31942;
+  --r:12px;
 }
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 html{-webkit-text-size-adjust:100%}
-body{background:var(--cancha-2);background-image:repeating-linear-gradient(90deg,rgba(255,255,255,.018) 0 46px,transparent 46px 92px);color:var(--cal);font:400 16px/1.5 'Barlow',system-ui,sans-serif;min-height:100vh;padding-bottom:64px}
+body{
+  background:var(--cancha-2);
+  color:var(--cal);
+  font:400 16px/1.5 'Barlow',system-ui,sans-serif;
+  min-height:100vh;padding-bottom:64px;position:relative;overflow-x:hidden;
+}
+
+/* ============ FONDO: MÉXICO A LA IZQUIERDA, USA A LA DERECHA ============ */
+body::before,body::after{
+  content:'';position:fixed;inset:0;z-index:-2;pointer-events:none;
+}
+/* México: bandas verticales verde, blanco, rojo */
+body::before{
+  background:linear-gradient(90deg,
+    var(--verde-mx) 0 33.3%, #FFFFFF 33.3% 66.6%, var(--rojo-mx) 66.6% 100%);
+  clip-path:polygon(0 0, 58% 0, 42% 100%, 0 100%);
+  opacity:.30;
+}
+/* Estados Unidos: barras + cantón azul con estrellas */
+body::after{
+  background:
+    radial-gradient(circle at 12px 12px, #FFF 1.6px, transparent 1.8px) 0 0/34px 34px,
+    linear-gradient(var(--azul-us),var(--azul-us)) 0 0/56% 46% no-repeat,
+    repeating-linear-gradient(180deg, var(--rojo-us) 0 7.7%, #FFFFFF 7.7% 15.4%);
+  background-blend-mode:screen,normal,normal;
+  clip-path:polygon(58% 0, 100% 0, 100% 100%, 42% 100%);
+  opacity:.30;
+}
+/* velo oscuro para que todo se lea */
+.velo{position:fixed;inset:0;z-index:-1;pointer-events:none;
+  background:linear-gradient(180deg,rgba(10,22,38,.80) 0%,rgba(10,22,38,.90) 40%,rgba(10,22,38,.95) 100%)}
+
+.wrap{max-width:640px;margin:0 auto;padding:0 16px}
+.hide{display:none !important}
 h1,h2,h3{font-family:'Barlow Condensed','Barlow',sans-serif;letter-spacing:.01em;line-height:1.05}
 button,input,select,textarea{font-family:inherit;font-size:16px}
 button{cursor:pointer;border:none;background:none;color:inherit}
 a{color:var(--ambar)}
-.wrap{max-width:640px;margin:0 auto;padding:0 16px}
-.hide{display:none !important}
 
-.barra{background:var(--cancha);border-bottom:2px solid var(--ambar);position:sticky;top:0;z-index:40;padding-top:env(safe-area-inset-top)}
+/* ============ BARRA ============ */
+.barra{
+  background:rgba(19,37,57,.94);backdrop-filter:blur(8px);
+  position:sticky;top:0;z-index:40;padding-top:env(safe-area-inset-top);
+  border-bottom:1px solid var(--raya);
+}
+.barra::after{
+  content:'';display:block;height:4px;
+  background:linear-gradient(90deg,
+    var(--verde-mx) 0 20%, #FFF 20% 27%, var(--rojo-mx) 27% 47%,
+    var(--azul-us) 47% 60%, var(--rojo-us) 60% 73%, #FFF 73% 86%, var(--rojo-us) 86% 100%);
+}
 .barra-in{display:flex;align-items:center;gap:12px;padding:12px 16px;max-width:640px;margin:0 auto}
-.escudo{width:38px;height:38px;flex:0 0 38px;border-radius:50%;background:var(--ambar);color:var(--cancha-2);display:grid;place-items:center;font-family:'Barlow Condensed';font-weight:700;font-size:19px}
+.escudo{
+  width:42px;height:42px;flex:0 0 42px;border-radius:50%;
+  background:linear-gradient(140deg,var(--verde-mx) 0 50%, var(--azul-us) 50% 100%);
+  border:2px solid var(--ambar);color:#FFF;
+  display:grid;place-items:center;font-family:'Barlow Condensed';font-weight:700;font-size:19px;
+  box-shadow:0 0 0 3px rgba(232,179,60,.18);
+}
 .barra h1{font-size:20px;font-weight:700;text-transform:uppercase}
 .barra small{display:block;font-size:11px;color:var(--cal-suave);letter-spacing:.08em;text-transform:uppercase;font-family:'Barlow'}
 .salir{margin-left:auto;font-size:13px;color:var(--cal-suave);border-bottom:1px solid var(--cal-tenue);padding-bottom:1px}
 
-.tabs{display:flex;background:var(--cancha);border-bottom:1px solid var(--raya);position:sticky;top:0;z-index:39}
-.tabs-in{display:flex;max-width:640px;margin:0 auto;width:100%}
-.tab{flex:1;padding:13px 4px;font-family:'Barlow Condensed';font-size:16px;font-weight:600;text-transform:uppercase;color:var(--cal-suave);border-bottom:3px solid transparent}
-.tab.on{color:var(--cal);border-bottom-color:var(--ambar)}
+/* ============ TABS estilo pastilla ============ */
+.tabs{background:rgba(19,37,57,.94);backdrop-filter:blur(8px);position:sticky;top:0;z-index:39;padding:8px 0;border-bottom:1px solid var(--raya)}
+.tabs-in{display:flex;gap:6px;max-width:640px;margin:0 auto;width:100%;padding:0 12px}
+.tab{
+  flex:1;padding:10px 4px;border-radius:999px;
+  font-family:'Barlow Condensed';font-size:16px;font-weight:600;text-transform:uppercase;
+  color:var(--cal-suave);border:1.5px solid transparent;transition:all .15s;
+}
+.tab.on{
+  color:#241703;border-color:var(--ambar-hondo);
+  background:linear-gradient(180deg,#F5C960,var(--ambar));
+  box-shadow:0 3px 0 var(--ambar-hondo);
+}
 
-.marcador{background:var(--cancha);border:1px solid var(--raya);border-radius:var(--r);margin-top:16px;overflow:hidden}
-.marcador-top{padding:16px 18px 14px;border-bottom:1px dashed var(--raya)}
-.marcador-top h2{font-size:26px;font-weight:700;text-transform:uppercase}
-.marcador-top p{font-size:13px;color:var(--cal-suave);margin-top:3px}
+/* ============ MARCADOR ============ */
+.marcador{background:rgba(19,37,57,.92);border:1px solid var(--raya);border-radius:var(--r);margin-top:16px;overflow:hidden;box-shadow:0 8px 26px rgba(0,0,0,.35)}
+.marcador-top{padding:16px 18px 14px;border-bottom:1px dashed var(--raya);position:relative}
+.marcador-top::before{content:'';position:absolute;left:0;top:0;bottom:0;width:5px;
+  background:linear-gradient(180deg,var(--verde-mx) 0 50%,var(--azul-us) 50% 100%)}
+.marcador-top h2{font-size:26px;font-weight:700;text-transform:uppercase;padding-left:8px}
+.marcador-top p{font-size:13px;color:var(--cal-suave);margin-top:3px;padding-left:8px}
 .reloj{display:flex;gap:10px;padding:14px 18px;align-items:baseline;flex-wrap:wrap}
-.reloj .num{font-family:'Barlow Condensed';font-size:38px;font-weight:700;color:var(--ambar);line-height:1}
+.reloj .num{font-family:'Barlow Condensed';font-size:40px;font-weight:700;color:var(--ambar);line-height:1;text-shadow:0 2px 0 rgba(0,0,0,.35)}
 .reloj .etq{font-size:12px;color:var(--cal-suave);letter-spacing:.06em}
-.bolsa{display:flex;justify-content:space-between;align-items:center;padding:12px 18px;background:rgba(233,161,59,.09);border-top:1px solid var(--raya)}
-.bolsa b{font-family:'Barlow Condensed';font-size:30px;font-weight:700;color:var(--ambar)}
+.bolsa{display:flex;justify-content:space-between;align-items:center;padding:13px 18px;
+  background:linear-gradient(90deg,rgba(0,104,71,.22),rgba(10,49,97,.22));border-top:1px solid var(--raya)}
+.bolsa b{font-family:'Barlow Condensed';font-size:32px;font-weight:700;color:var(--ambar)}
 .bolsa span{font-size:13px;color:var(--cal-suave)}
 
-.boleta{margin-top:18px;border:1px solid var(--raya);border-radius:var(--r);background:var(--cancha);overflow:hidden}
-.boleta-cab{padding:12px 16px;background:var(--raya);display:flex;justify-content:space-between;align-items:center}
+/* ============ BOLETA ============ */
+.boleta{margin-top:18px;border:1px solid var(--raya);border-radius:var(--r);background:rgba(19,37,57,.92);overflow:hidden;box-shadow:0 8px 26px rgba(0,0,0,.3)}
+.boleta-cab{padding:12px 16px;background:linear-gradient(90deg,var(--verde-mx),var(--azul-us));display:flex;justify-content:space-between;align-items:center}
 .boleta-cab h3{font-size:17px;text-transform:uppercase;font-weight:700}
-.boleta-cab em{font-style:normal;font-size:13px;color:var(--cal-suave)}
-.grupo{padding:8px 16px;background:rgba(255,255,255,.03);border-bottom:1px solid var(--raya);font-family:'Barlow Condensed';font-size:14px;font-weight:600;letter-spacing:.06em;color:var(--cal-suave);text-transform:uppercase}
+.boleta-cab em{font-style:normal;font-size:13px;color:rgba(255,255,255,.75)}
+.grupo{padding:8px 16px;background:rgba(232,179,60,.10);border-bottom:1px solid var(--raya);
+  font-family:'Barlow Condensed';font-size:14px;font-weight:700;letter-spacing:.1em;color:var(--ambar);text-transform:uppercase}
 .filap{display:grid;grid-template-columns:1fr auto;gap:10px;padding:14px 16px;border-bottom:1px solid var(--raya);align-items:center}
 .filap:last-child{border-bottom:none}
 .equipos{min-width:0}
 .equipos .l,.equipos .v{font-weight:600;font-size:15px}
 .equipos .vs{font-size:11px;color:var(--cal-suave);letter-spacing:.14em;margin:2px 0}
 .equipos .hr{font-size:12px;color:var(--cal-suave);margin-top:4px}
-.equipos .num-p{font-family:'Barlow Condensed';font-size:13px;color:var(--ambar);font-weight:700;margin-right:6px}
-.picks{display:flex;gap:6px}
-.pick{width:44px;height:44px;border-radius:8px;border:1.5px solid var(--raya);font-family:'Barlow Condensed';font-size:19px;font-weight:700;color:var(--cal-suave);display:grid;place-items:center;transition:background .12s,color .12s,border-color .12s}
-.pick:disabled{opacity:.5;cursor:default}
-.pick.sel{background:var(--ambar);border-color:var(--ambar);color:var(--cancha-2)}
-.pick.acierto{box-shadow:inset 0 0 0 2px var(--verde)}
-.pick.fallo{box-shadow:inset 0 0 0 2px var(--roja)}
-.res-chip{font-size:11px;color:var(--cal-suave);margin-top:5px;letter-spacing:.06em}
+.equipos .num-p{display:inline-grid;place-items:center;width:20px;height:20px;border-radius:5px;
+  background:var(--raya);font-family:'Barlow Condensed';font-size:12px;color:var(--ambar);font-weight:700;margin-right:7px}
 
-.btn{display:block;width:100%;padding:15px;border-radius:var(--r);background:var(--ambar);color:var(--cancha-2);font-family:'Barlow Condensed';font-size:19px;font-weight:700;text-transform:uppercase;margin-top:14px}
-.btn:disabled{background:var(--raya);color:var(--cal-suave)}
-.btn.fantasma{background:none;border:1.5px solid var(--raya);color:var(--cal)}
-.btn.chico{width:auto;padding:9px 16px;font-size:15px;margin-top:0}
-.btn.roja{background:var(--roja);color:var(--cal)}
+/* ---- botones L / E / V con relieve ---- */
+.picks{display:flex;gap:7px}
+.pick{
+  width:46px;height:46px;border-radius:10px;
+  border:1.5px solid var(--raya);background:rgba(255,255,255,.04);
+  font-family:'Barlow Condensed';font-size:20px;font-weight:700;color:var(--cal-suave);
+  display:grid;place-items:center;transition:transform .08s,box-shadow .08s,background .15s;
+  box-shadow:0 3px 0 rgba(0,0,0,.35);
+}
+.pick:active:not(:disabled){transform:translateY(3px);box-shadow:0 0 0 rgba(0,0,0,.35)}
+.pick:disabled{opacity:.45;cursor:default;box-shadow:none}
+.pick.sel{color:#FFF;border-color:transparent;text-shadow:0 1px 2px rgba(0,0,0,.4)}
+.pick.sel:nth-child(1){background:linear-gradient(180deg,#00905F,var(--verde-mx));box-shadow:0 3px 0 #004E35}
+.pick.sel:nth-child(2){background:linear-gradient(180deg,#F5C960,var(--ambar));color:#241703;box-shadow:0 3px 0 var(--ambar-hondo);text-shadow:none}
+.pick.sel:nth-child(3){background:linear-gradient(180deg,#154A8C,var(--azul-us));box-shadow:0 3px 0 #06203F}
+.pick.acierto{outline:2.5px solid #2ECC71;outline-offset:2px}
+.pick.fallo{outline:2.5px solid var(--rojo-us);outline-offset:2px}
+.res-chip{font-size:11px;color:var(--ambar);margin-top:5px;letter-spacing:.06em;font-weight:600}
 
-.tabla{margin-top:16px;border:1px solid var(--raya);border-radius:var(--r);overflow:hidden}
-.tabla-cab{padding:12px 16px;background:var(--raya);font-family:'Barlow Condensed';font-size:17px;font-weight:700;text-transform:uppercase}
-.pos{display:grid;grid-template-columns:28px 30px 1fr auto auto;gap:9px;padding:12px 16px;align-items:center;border-bottom:1px solid var(--raya);background:var(--cancha)}
+/* ============ BOTONES ============ */
+.btn{
+  display:block;width:100%;padding:15px;border-radius:var(--r);
+  background:linear-gradient(180deg,#F5C960,var(--ambar));color:#241703;
+  font-family:'Barlow Condensed';font-size:20px;font-weight:700;text-transform:uppercase;letter-spacing:.03em;
+  margin-top:14px;box-shadow:0 4px 0 var(--ambar-hondo);transition:transform .08s,box-shadow .08s;
+}
+.btn:active:not(:disabled){transform:translateY(4px);box-shadow:0 0 0 var(--ambar-hondo)}
+.btn:disabled{background:var(--raya);color:var(--cal-suave);box-shadow:0 4px 0 rgba(0,0,0,.3)}
+.btn.fantasma{background:rgba(255,255,255,.05);border:1.5px solid var(--raya);color:var(--cal);box-shadow:0 4px 0 rgba(0,0,0,.32)}
+.btn.chico{width:auto;padding:9px 16px;font-size:15px;margin-top:0;box-shadow:0 3px 0 var(--ambar-hondo)}
+.btn.chico.fantasma{box-shadow:0 3px 0 rgba(0,0,0,.32)}
+.btn.roja{background:linear-gradient(180deg,#E0344A,var(--rojo-us));color:#FFF;box-shadow:0 4px 0 #7C1129}
+
+/* ============ TABLA ============ */
+.tabla{margin-top:16px;border:1px solid var(--raya);border-radius:var(--r);overflow:hidden;box-shadow:0 8px 26px rgba(0,0,0,.3)}
+.tabla-cab{padding:12px 16px;background:linear-gradient(90deg,var(--verde-mx),var(--azul-us));
+  font-family:'Barlow Condensed';font-size:17px;font-weight:700;text-transform:uppercase}
+.pos{display:grid;grid-template-columns:30px 34px 1fr auto auto;gap:9px;padding:12px 16px;align-items:center;
+  border-bottom:1px solid var(--raya);background:rgba(19,37,57,.92)}
 .pos:last-child{border-bottom:none}
-.pos .lug{font-family:'Barlow Condensed';font-size:21px;font-weight:700;color:var(--cal-suave)}
-.pos.p1 .lug{color:var(--ambar)}
-.pos .av{font-size:22px;line-height:1;text-align:center}
+.pos .lug{font-family:'Barlow Condensed';font-size:21px;font-weight:700;color:var(--cal-suave);text-align:center}
+.pos.p1{background:linear-gradient(90deg,rgba(232,179,60,.16),rgba(19,37,57,.92))}
+.pos.p1 .lug{color:var(--ambar);font-size:25px}
+.pos .av{font-size:23px;line-height:1;text-align:center}
 .pos .nom{font-weight:600;font-size:15px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .pos .nom small{display:block;font-weight:400;font-size:12px;color:var(--cal-suave)}
-.pos .pts{font-family:'Barlow Condensed';font-size:23px;font-weight:700}
-.pos .prem{font-size:13px;color:var(--ambar);font-weight:600}
-.deuda{font-size:11px;color:var(--roja);font-weight:600;letter-spacing:.04em}
+.pos .pts{font-family:'Barlow Condensed';font-size:25px;font-weight:700}
+.pos .prem{font-size:13px;color:var(--ambar);font-weight:700}
+.deuda{font-size:11px;color:#FF7A66;font-weight:600;letter-spacing:.04em}
 
+/* ============ FORMULARIOS ============ */
 .campo{margin-top:14px}
 .campo label{display:block;font-size:13px;color:var(--cal-suave);margin-bottom:6px}
-.campo input,.campo select{width:100%;padding:13px 14px;border-radius:8px;background:var(--cancha);border:1.5px solid var(--raya);color:var(--cal)}
+.campo input,.campo select{width:100%;padding:13px 14px;border-radius:10px;background:rgba(10,22,38,.75);
+  border:1.5px solid var(--raya);color:var(--cal)}
 .campo input:focus,.campo select:focus{outline:2px solid var(--ambar);border-color:transparent}
+.campo input::placeholder{color:rgba(245,243,238,.32)}
 .fila2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .fila3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
 
-.entrada{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px 16px}
-.entrada-caja{width:100%;max-width:400px}
+/* ============ ENTRADA ============ */
+.entrada{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:28px 16px}
+.entrada-caja{width:100%;max-width:410px}
 .logo-grande{text-align:center;margin-bottom:26px}
-.logo-grande .balon{width:74px;height:74px;margin:0 auto 14px;border-radius:50%;background:var(--ambar);color:var(--cancha-2);display:grid;place-items:center;font-family:'Barlow Condensed';font-size:34px;font-weight:700}
-.logo-grande h1{font-size:34px;font-weight:700;text-transform:uppercase}
-.logo-grande p{font-size:13px;color:var(--cal-suave);margin-top:6px;letter-spacing:.1em;text-transform:uppercase}
+.logo-grande .balon{
+  width:92px;height:92px;margin:0 auto 16px;border-radius:50%;
+  background:linear-gradient(140deg,var(--verde-mx) 0 50%,var(--azul-us) 50% 100%);
+  border:3px solid var(--ambar);color:#FFF;display:grid;place-items:center;
+  font-family:'Barlow Condensed';font-size:38px;font-weight:700;
+  box-shadow:0 0 0 6px rgba(232,179,60,.14), 0 10px 30px rgba(0,0,0,.45);
+}
+.logo-grande h1{font-size:38px;font-weight:700;text-transform:uppercase;text-shadow:0 3px 0 rgba(0,0,0,.35)}
+.logo-grande p{font-size:12px;color:var(--ambar);margin-top:8px;letter-spacing:.14em;text-transform:uppercase;font-weight:600}
+.banderines{display:flex;justify-content:center;gap:8px;font-size:20px;margin-top:10px}
 .cambio{text-align:center;margin-top:18px;font-size:14px;color:var(--cal-suave)}
 .cambio button{color:var(--ambar);font-weight:600;text-decoration:underline}
 
+/* ============ VARIOS ============ */
 .vacio{text-align:center;padding:44px 20px;color:var(--cal-suave);font-size:15px}
-.aviso{padding:12px 14px;border-radius:8px;font-size:14px;margin-top:14px;border-left:3px solid}
-.aviso.err{background:rgba(193,70,47,.14);border-color:var(--roja)}
-.aviso.ok{background:rgba(79,169,107,.14);border-color:var(--verde)}
-.aviso.info{background:rgba(233,161,59,.11);border-color:var(--ambar)}
+.aviso{padding:12px 14px;border-radius:10px;font-size:14px;margin-top:14px;border-left:4px solid}
+.aviso.err{background:rgba(206,17,38,.16);border-color:var(--rojo-us)}
+.aviso.ok{background:rgba(0,122,77,.18);border-color:var(--verde)}
+.aviso.info{background:rgba(232,179,60,.13);border-color:var(--ambar)}
 .seccion{margin-top:26px}
-.seccion > h3{font-family:'Barlow Condensed';font-size:20px;font-weight:700;text-transform:uppercase;margin-bottom:2px}
+.seccion > h3{font-family:'Barlow Condensed';font-size:21px;font-weight:700;text-transform:uppercase;margin-bottom:2px}
 .seccion > p{font-size:13px;color:var(--cal-suave)}
-.tarjeta{background:var(--cancha);border:1px solid var(--raya);border-radius:var(--r);padding:16px;margin-top:12px}
-.jrow{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:13px 16px;border-bottom:1px solid var(--raya);background:var(--cancha)}
+.tarjeta{background:rgba(19,37,57,.92);border:1px solid var(--raya);border-radius:var(--r);padding:16px;margin-top:12px;box-shadow:0 8px 26px rgba(0,0,0,.3)}
+.jrow{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:13px 16px;border-bottom:1px solid var(--raya);background:rgba(19,37,57,.92)}
 .jrow:last-child{border-bottom:none}
 .jrow .t{font-weight:600;font-size:15px}
 .jrow .s{font-size:12px;color:var(--cal-suave);margin-top:2px}
-.etiqueta{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:3px 8px;border-radius:4px}
-.etiqueta.abierta{background:rgba(79,169,107,.18);color:var(--verde)}
-.etiqueta.cerrada{background:rgba(233,161,59,.18);color:var(--ambar)}
+.etiqueta{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:4px 9px;border-radius:999px}
+.etiqueta.abierta{background:rgba(0,122,77,.24);color:#5EE0A0}
+.etiqueta.cerrada{background:rgba(232,179,60,.20);color:var(--ambar)}
 .etiqueta.finalizada{background:var(--raya);color:var(--cal-suave)}
 .cargando{text-align:center;padding:50px;color:var(--cal-suave)}
 .switch{display:flex;align-items:center;gap:9px;font-size:14px;cursor:pointer}
@@ -125,34 +230,53 @@ a{color:var(--ambar)}
 .mini{font-size:12px;color:var(--cal-suave);margin-top:8px;line-height:1.45}
 
 .progreso{display:flex;align-items:center;gap:12px;margin-top:12px}
-.progreso .cifra{font-family:'Barlow Condensed';font-size:30px;font-weight:700;color:var(--ambar);line-height:1}
+.progreso .cifra{font-family:'Barlow Condensed';font-size:32px;font-weight:700;color:var(--ambar);line-height:1}
 .progreso .txt{font-size:13px;color:var(--cal-suave)}
 .barritas{display:flex;gap:3px;margin-top:8px}
-.barrita{height:6px;flex:1;border-radius:3px;background:var(--raya)}
-.barrita.on{background:var(--ambar)}
-.barrita.mx{background:var(--verde)}
+.barrita{height:7px;flex:1;border-radius:4px;background:var(--raya)}
+.barrita.on{background:var(--azul-us)}
+.barrita.mx{background:var(--verde-mx)}
 
-/* ---------- PERFIL ---------- */
-.perfil-cab{display:flex;align-items:center;gap:16px;padding:20px 18px;background:var(--cancha);border:1px solid var(--raya);border-radius:var(--r);margin-top:16px}
-.perfil-av{width:64px;height:64px;flex:0 0 64px;border-radius:50%;background:var(--raya);display:grid;place-items:center;font-size:32px;border:2px solid var(--ambar)}
-.perfil-cab h2{font-size:26px;font-weight:700}
-.perfil-cab p{font-size:13px;color:var(--cal-suave);margin-top:2px}
+/* ============ PERFIL: credencial ============ */
+.perfil-cab{
+  margin-top:16px;border-radius:var(--r);overflow:hidden;border:1px solid var(--raya);
+  background:rgba(19,37,57,.92);box-shadow:0 10px 30px rgba(0,0,0,.4);
+}
+.perfil-tira{height:8px;background:linear-gradient(90deg,
+  var(--verde-mx) 0 16%, #FFF 16% 25%, var(--rojo-mx) 25% 42%,
+  var(--azul-us) 50% 62%, var(--rojo-us) 62% 74%, #FFF 74% 86%, var(--rojo-us) 86% 100%)}
+.perfil-cuerpo{display:flex;align-items:center;gap:16px;padding:20px 18px}
+.perfil-av{
+  width:76px;height:76px;flex:0 0 76px;border-radius:50%;
+  background:linear-gradient(140deg,var(--verde-mx) 0 50%,var(--azul-us) 50% 100%);
+  display:grid;place-items:center;font-size:36px;border:3px solid var(--ambar);
+  box-shadow:0 0 0 5px rgba(232,179,60,.15);
+}
+.perfil-cuerpo h2{font-size:28px;font-weight:700}
+.perfil-cuerpo p{font-size:13px;color:var(--cal-suave);margin-top:4px}
 .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px}
-.stat{background:var(--cancha);border:1px solid var(--raya);border-radius:var(--r);padding:14px 10px;text-align:center}
-.stat b{display:block;font-family:'Barlow Condensed';font-size:30px;font-weight:700;color:var(--ambar);line-height:1}
-.stat span{display:block;font-size:11px;color:var(--cal-suave);margin-top:5px;letter-spacing:.04em}
+.stat{background:rgba(19,37,57,.92);border:1px solid var(--raya);border-radius:var(--r);padding:15px 10px;text-align:center;position:relative;overflow:hidden}
+.stat::before{content:'';position:absolute;left:0;right:0;top:0;height:3px;background:var(--ambar)}
+.stat b{display:block;font-family:'Barlow Condensed';font-size:32px;font-weight:700;color:var(--ambar);line-height:1}
+.stat span{display:block;font-size:11px;color:var(--cal-suave);margin-top:6px;letter-spacing:.04em}
 .avatares{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
-.av-op{width:46px;height:46px;border-radius:10px;border:1.5px solid var(--raya);font-size:24px;display:grid;place-items:center}
-.av-op.sel{border-color:var(--ambar);background:rgba(233,161,59,.16)}
+.av-op{width:48px;height:48px;border-radius:12px;border:1.5px solid var(--raya);background:rgba(255,255,255,.04);
+  font-size:25px;display:grid;place-items:center;box-shadow:0 3px 0 rgba(0,0,0,.3);transition:transform .08s}
+.av-op:active{transform:translateY(3px);box-shadow:none}
+.av-op.sel{border-color:var(--ambar);background:linear-gradient(180deg,rgba(232,179,60,.28),rgba(232,179,60,.12));box-shadow:0 3px 0 var(--ambar-hondo)}
+
+/* ============ VERIFICACIÓN ============ */
 .ver-caja{text-align:center;padding:26px 20px}
-.ver-caja .cod{font-family:'Barlow Condensed';font-size:52px;font-weight:700;color:var(--ambar);letter-spacing:.14em;line-height:1;margin:14px 0}
-.lada{display:grid;grid-template-columns:110px 1fr;gap:10px}
-.chip-ver{font-size:11px;font-weight:700;letter-spacing:.06em;padding:2px 7px;border-radius:4px;background:rgba(79,169,107,.18);color:var(--verde);margin-left:6px}
-.chip-no{font-size:11px;font-weight:700;letter-spacing:.06em;padding:2px 7px;border-radius:4px;background:rgba(193,70,47,.18);color:var(--roja);margin-left:6px}
+.ver-caja .cod{font-family:'Barlow Condensed';font-size:56px;font-weight:700;color:var(--ambar);
+  letter-spacing:.18em;line-height:1;margin:14px 0;text-shadow:0 3px 0 rgba(0,0,0,.4)}
+.lada{display:grid;grid-template-columns:120px 1fr;gap:10px}
+.chip-ver{font-size:11px;font-weight:700;letter-spacing:.06em;padding:3px 9px;border-radius:999px;background:rgba(0,122,77,.26);color:#5EE0A0;margin-left:6px}
+.chip-no{font-size:11px;font-weight:700;letter-spacing:.06em;padding:3px 9px;border-radius:999px;background:rgba(206,17,38,.24);color:#FF8A78;margin-left:6px}
 @media (prefers-reduced-motion:reduce){*{transition:none !important}}
 </style>
 </head>
 <body>
+<div class="velo"></div>
 
 <!-- ==================== ENTRADA ==================== -->
 <div id="entrada" class="entrada">
@@ -161,6 +285,7 @@ a{color:var(--ambar)}
       <div class="balon">PA</div>
       <h1>Quinielas<br>El Piji Achotero</h1>
       <p>10 partidos · gana el que más acierte</p>
+      <div class="banderines">🇲🇽 ⚽ 🇺🇸</div>
     </div>
 
     <div id="formLogin">
@@ -352,7 +477,8 @@ function iniciarSesion(u){
   $('entrada').classList.add('hide');
   $('app').classList.remove('hide');
   $('miAvatar').textContent = u.avatar || '⚽';
-  $('quienSoy').textContent = (u.rol === 'admin' ? 'Organizador · ' : '') + u.nombre;
+  const et = u.rol === 'admin' ? 'Dueño · ' : (u.rol === 'organizador' ? 'Organizador · ' : '');
+  $('quienSoy').textContent = et + u.nombre;
   armarTabs(); cargar(); suscribir();
 }
 
@@ -413,6 +539,10 @@ const nombreDe = id => usuarioDe(id).nombre || 'Jugador';
 const avatarDe = id => usuarioDe(id).avatar || '⚽';
 const waDe     = id => usuarioDe(id).whatsapp || '';
 const verifDe  = id => !!usuarioDe(id).verificado;
+const esDueno  = () => yo?.rol === 'admin';
+const esStaff  = () => ['admin','organizador'].includes(yo?.rol);
+const esJugador= u => !['admin','organizador'].includes(u.rol);
+const tituloRol= r => r === 'admin' ? 'Dueño' : (r === 'organizador' ? 'Organizador' : '');
 
 function puntosDe(boletoId){
   let pts = 0;
@@ -461,7 +591,7 @@ function porLiga(lista){
    ============================================================ */
 function armarTabs(){
   const t = [['boleta','Boleta'],['tabla','Tabla'],['perfil','Perfil']];
-  if(yo.rol === 'admin') t.push(['admin','Organizar']);
+  if(esStaff()) t.push(['admin','Organizar']);
   $('tabs').innerHTML = t.map(([k,n]) => `<button class="tab ${tab===k?'on':''}" onclick="irA('${k}')">${n}</button>`).join('');
 }
 function irA(k){ tab = k; armarTabs(); pintar(); if(k === 'perfil' && !historial) cargarHistorial(); }
@@ -711,11 +841,14 @@ function vistaPerfil(){
   return `
   ${!yo.verificado ? bannerVerificar() : ''}
   <div class="perfil-cab">
+    <div class="perfil-tira"></div>
+    <div class="perfil-cuerpo">
     <div class="perfil-av">${yo.avatar || '⚽'}</div>
     <div>
       <h2>${esc(yo.nombre)}</h2>
-      <p>${bonito(yo.whatsapp)}${yo.rol==='admin'?' · organizador':''}
+      <p>${yo.pais==='1'?'🇺🇸':'🇲🇽'} ${bonito(yo.whatsapp)}${esStaff()?' · '+tituloRol(yo.rol).toLowerCase():''}
         <span class="${yo.verificado?'chip-ver':'chip-no'}">${yo.verificado?'VERIFICADO':'SIN VERIFICAR'}</span></p>
+    </div>
     </div>
   </div>
 
@@ -776,7 +909,8 @@ async function guardarPerfil(){
   const { error } = await sb.from('usuarios').update({ nombre, avatar:yo.avatar }).eq('id', yo.id);
   if(error) return aviso('pfMsg','No se pudo guardar: ' + error.message);
   yo.nombre = nombre;
-  $('quienSoy').textContent = (yo.rol==='admin'?'Organizador · ':'') + nombre;
+  const et2 = yo.rol==='admin' ? 'Dueño · ' : (yo.rol==='organizador' ? 'Organizador · ' : '');
+  $('quienSoy').textContent = et2 + nombre;
   historial = null;
   await cargar();
   await cargarHistorial();
@@ -801,7 +935,7 @@ async function verJornada(id){ jornadaVista = id; tab = 'boleta'; armarTabs(); a
    ============================================================ */
 function vistaAdmin(){
   const j = datos.jornada;
-  const jugadores  = datos.usuarios.filter(u => u.rol !== 'admin');
+  const jugadores  = datos.usuarios.filter(esJugador);
   const pendientes = jugadores.filter(u => !u.verificado);
   const verificados= jugadores.filter(u => u.verificado);
   return `
@@ -827,6 +961,7 @@ function vistaAdmin(){
     </div>
   </div>
   ${j ? panelJornada(j) : ''}
+  ${esDueno() ? `
   <div class="seccion">
     <h3>Tu WhatsApp de organizador</h3>
     <p>A este número llegan los códigos de verificación de los jugadores.</p>
@@ -838,6 +973,21 @@ function vistaAdmin(){
       <p class="mini">Ejemplo México: 52 + 10 dígitos. Ejemplo Estados Unidos: 1 + 10 dígitos. Sin espacios ni signo de más.</p>
     </div>
   </div>
+
+  <div class="seccion">
+    <h3>Equipo</h3>
+    <p>Quiénes tienen acceso al panel.</p>
+    <div class="tabla">
+      ${datos.usuarios.filter(u => !esJugador(u)).map(u => `
+        <div class="jrow">
+          <div><div class="t">${u.avatar||'⚽'} ${esc(u.nombre)}</div>
+            <div class="s">${esc(u.whatsapp)} · ${tituloRol(u.rol)}</div></div>
+          ${u.rol==='organizador' ? `<button class="btn chico fantasma" onclick="resetPin('${u.id}','${esc(u.nombre)}')">Cambiar PIN</button>` : '<span class="etiqueta abierta">Tú</span>'}
+        </div>`).join('')}
+    </div>
+    <p class="mini">Guse no puede marcar pagos, finalizar jornadas ni entrar aquí. Todo lo demás sí.</p>
+  </div>
+  ` : ''}
 
   ${pendientes.length ? `
   <div class="seccion">
@@ -872,12 +1022,21 @@ function vistaAdmin(){
 }
 
 async function guardarWaOrg(){
+  if(!esDueno()) return;
   const n = soloD($('cfWa').value);
   if(n.length < 11) return aviso('cfMsg','Falta la lada de país. México va con 52 al principio.');
   const { error } = await sb.from('config').update({ valor:n }).eq('clave','whatsapp_org');
   if(error) return aviso('cfMsg','No se pudo guardar: ' + error.message);
   WHATSAPP_ORG = n;
   aviso('cfMsg','Número guardado.','ok');
+}
+
+async function resetPin(id, nombre){
+  const nuevo = prompt(`PIN nuevo de 4 dígitos para ${nombre}:`);
+  if(nuevo === null) return;
+  if(!/^\d{4}$/.test(nuevo)) return alert('Tienen que ser 4 dígitos.');
+  const { error } = await sb.from('usuarios').update({ pin:nuevo }).eq('id', id);
+  alert(error ? 'No se pudo: ' + error.message : `Listo. El PIN de ${nombre} ahora es ${nuevo}.`);
 }
 
 async function verificarJugador(id, aprobar){
@@ -918,10 +1077,10 @@ function panelJornada(j){
     <div class="jrow">
       <div><div class="t">${avatarDe(b.usuario_id)} ${esc(nombreDe(b.usuario_id))}</div>
         <div class="s">${bonito(waDe(b.usuario_id))} · ${puntosDe(b.id)} aciertos${!verifDe(b.usuario_id)?' · SIN VERIFICAR':''}</div></div>
-      <label class="switch">
+      ${esDueno() ? `<label class="switch">
         <input type="checkbox" ${b.pagado?'checked':''} onchange="marcarPago('${b.id}',this.checked)">
         <span>${b.pagado?'Pagó':'Debe'}</span>
-      </label>
+      </label>` : `<span class="etiqueta ${b.pagado?'abierta':'cerrada'}">${b.pagado?'Pagó':'Debe'}</span>`}
     </div>`).join('') || '<div class="vacio">Sin boletas todavía.</div>';
 
   const porCobrar = datos.boletos.filter(b => !b.pagado).length;
@@ -965,12 +1124,13 @@ function panelJornada(j){
       ${listaPartidos}
     </div>` : ''}
 
-    <div class="fila2" style="margin-top:14px">
+    <div class="${esDueno()?'fila2':''}" style="margin-top:14px">
       <button class="btn fantasma" onclick="cambiarEstado('${j.estado==='abierta'?'cerrada':'abierta'}')">
         ${j.estado==='abierta'?'Cerrar registro':'Reabrir registro'}
       </button>
-      <button class="btn" onclick="cambiarEstado('finalizada')">Finalizar y pagar</button>
+      ${esDueno() ? `<button class="btn" onclick="cambiarEstado('finalizada')">Finalizar y pagar</button>` : ''}
     </div>
+    ${!esDueno() ? `<p class="mini">Los pagos y el cierre final de la jornada los maneja Jared.</p>` : ''}
     <button class="btn fantasma" onclick="convocar()">Convocar por WhatsApp</button>
 
     <div class="tabla" style="margin-top:18px">
@@ -1032,11 +1192,13 @@ async function ponerResultado(id, v){
 }
 
 async function marcarPago(boletoId, valor){
+  if(!esDueno()) return;
   await sb.from('boletos').update({ pagado: valor }).eq('id', boletoId);
   await cargar();
 }
 
 async function cambiarEstado(estado){
+  if(estado === 'finalizada' && !esDueno()) return alert('Solo Jared puede finalizar la jornada y repartir.');
   if(estado === 'finalizada' && !confirm('¿Finalizar la jornada? Se calculan los premios con los resultados actuales.')) return;
   await sb.from('jornadas').update({ estado }).eq('id', datos.jornada.id);
   historial = null;
