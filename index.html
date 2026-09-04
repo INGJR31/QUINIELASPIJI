@@ -184,6 +184,7 @@ a{color:var(--oro)}
 .etiqueta.abierta,.etiqueta.ok{background:rgba(18,160,106,.20);color:#4FD8A0}
 .etiqueta.cerrada,.etiqueta.pend{background:rgba(212,164,56,.18);color:var(--oro)}
 .etiqueta.finalizada{background:var(--linea);color:var(--suave)}
+.etiqueta.borrador{background:rgba(29,78,137,.30);color:#8FB6E8}
 .etiqueta.mal{background:rgba(192,57,43,.20);color:#F08A7E}
 .cargando{text-align:center;padding:50px;color:var(--suave)}
 .switch{display:flex;align-items:center;gap:9px;font-size:14px;cursor:pointer}
@@ -269,7 +270,8 @@ const SUPABASE_URL  = "https://xuefkdynywuajknfluzh.supabase.co";
 const SUPABASE_ANON = "sb_publishable_dF4SofCAvQ6VyDsuiFaSbw_rYcPiOx4";
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
 
-const META_PARTIDOS = 10;
+const META_DEFAULT = 10;
+const metaDe = j => Number(j?.total_partidos) > 0 ? Number(j.total_partidos) : META_DEFAULT;
 const AVATARES = ['⚽','🏆','🔥','🐓','🐂','🦅','🐐','🎯','👑','🥊','🐎','⭐','💥','🌵','🧢','🍺'];
 
 const TERMINOS_BASE = `CLÁUSULAS DE PARTICIPACIÓN
@@ -320,12 +322,15 @@ const LIGAS = {
   'Serie A': ['Atalanta','Bologna','Fiorentina','Inter','Juventus','Lazio','Milan','Napoli','Roma','Torino'],
   'Bundesliga': ['Bayer Leverkusen','Bayern Múnich','Borussia Dortmund','Eintracht Frankfurt','Mönchengladbach','RB Leipzig','Stuttgart','Union Berlín','Werder Bremen','Wolfsburgo'],
   'Ligue 1': ['Lens','Lille','Lyon','Marsella','Mónaco','Niza','PSG','Rennes'],
+  'Liga Expansión MX': ['Alebrijes','Atlético Morelia','Cancún FC','Celaya','Correcaminos','Dorados','Jaiba Brava','Leones Negros','Mineros','Tampico Madero','Tepatitlán','Tlaxcala','Venados FC'],
+  'Brasileirão': ['Atlético Mineiro','Botafogo','Corinthians','Cruzeiro','Flamengo','Fluminense','Grêmio','Internacional','Palmeiras','São Paulo','Santos','Vasco da Gama'],
+  'MLS': ['Atlanta United','Austin FC','Inter Miami','LA Galaxy','LAFC','New York City FC','Portland Timbers','Seattle Sounders'],
   'Champions League': [],
   'Otra': []
 };
 LIGAS['Champions League'] = [...new Set([...LIGAS['Premier League'],...LIGAS['LaLiga'],...LIGAS['Serie A'],...LIGAS['Bundesliga'],...LIGAS['Ligue 1']])].sort();
 const ORDEN_LIGAS = Object.keys(LIGAS);
-const abrevia = l => ({'Liga MX':'LIGA MX','Premier League':'PREMIER LEAGUE','LaLiga':'LALIGA','Serie A':'SERIE A','Bundesliga':'BUNDESLIGA','Ligue 1':'LIGUE 1','Champions League':'CHAMPIONS LEAGUE'}[l] || (l||'OTRA').toUpperCase());
+const abrevia = l => ({'Liga MX':'LIGA MX','Liga Expansión MX':'LIGA DE EXPANSIÓN','Premier League':'PREMIER LEAGUE','LaLiga':'LALIGA','Serie A':'SERIE A','Bundesliga':'BUNDESLIGA','Ligue 1':'LIGUE 1','Brasileirão':'BRASILEIRÃO','MLS':'MLS','Champions League':'CHAMPIONS LEAGUE'}[l] || (l||'OTRA').toUpperCase());
 
 /* ---------- Logo ---------- */
 function LOGO(size){
@@ -356,6 +361,7 @@ function LOGO(size){
 
 /* ---------- Estado ---------- */
 let yo = null, tab = 'boleta', cuenta = null, ligaSel = 'Liga MX';
+let avisoJornada = null;
 let CFG = {};
 let datos = { jornadas:[], jornada:null, partidos:[], boletos:[], pronosticos:[], usuarios:[], depositos:[], retiros:[], movimientos:[] };
 let borrador = {}, jornadaVista = null, avatarNuevo = '⚽', historial = null, aceptoTerm = false;
@@ -524,6 +530,7 @@ function iniciarSesion(u){
   $('logoBarra').innerHTML = LOGO(38);
   const et = tituloRol(u.rol);
   $('quienSoy').textContent = (et ? et + ' · ' : '') + u.nombre;
+  tab = esStaff() ? 'admin' : 'boleta';
   armarTabs(); cargar(); suscribir();
 }
 
@@ -553,9 +560,10 @@ async function cargar(){
 
   const { data:jornadas } = await sb.from('jornadas').select('*').order('created_at',{ascending:false});
   datos.jornadas = jornadas || [];
-  if(!jornadaVista || !datos.jornadas.some(j => j.id === jornadaVista)){
-    const abierta = datos.jornadas.find(j => j.estado === 'abierta');
-    jornadaVista = (abierta || datos.jornadas[0])?.id || null;
+  const visibles = esStaff() ? datos.jornadas : datos.jornadas.filter(j => j.estado !== 'borrador');
+  if(!jornadaVista || !visibles.some(j => j.id === jornadaVista)){
+    const abierta = visibles.find(j => j.estado === 'abierta');
+    jornadaVista = (abierta || visibles[0])?.id || null;
   }
   datos.jornada = datos.jornadas.find(j => j.id === jornadaVista) || null;
 
@@ -623,7 +631,8 @@ function puntosDe(boletoId){
   return pts;
 }
 const bolsa = () => datos.jornada ? datos.boletos.filter(b => b.pagado).length * Number(datos.jornada.costo) : 0;
-const listaJornada = () => datos.partidos.length >= META_PARTIDOS;
+const listaJornada = () => datos.jornada && datos.partidos.length >= metaDe(datos.jornada);
+const visiblePara = j => j && (esStaff() || j.estado !== 'borrador');
 
 function tablaPosiciones(){
   const j = datos.jornada;
@@ -660,10 +669,10 @@ function armarTabs(){
   const pendVer = datos.usuarios.filter(u => esJugador(u) && !u.verificado).length;
   const pendRet = datos.retiros.filter(r => r.estado === 'pendiente').length;
   const alerta  = esStaff() && (pendDep + pendVer + pendRet) > 0;
-  const t = [['boleta','Boleta'],['tabla','Tabla']];
+  const t = esStaff() ? [['admin','Panel'],['tabla','Tabla']] : [['boleta','Boleta'],['tabla','Tabla']];
   if(hayCancha()) t.push(['cancha','Ligas']);
-  t.push(['saldo','Saldo'],['perfil','Perfil']);
-  if(esStaff()) t.push(['admin','Panel']);
+  if(!esStaff()) t.push(['saldo','Saldo']);
+  t.push(['perfil','Perfil']);
   $('tabs').innerHTML = t.map(([k,n]) =>
     `<button class="tab ${tab===k?'on':''}" onclick="irA('${k}')">${n}${k==='admin'&&alerta?'<span class="punto"></span>':''}</button>`).join('');
 }
@@ -706,11 +715,11 @@ function cabecera(){
   <div class="marcador">
     <div class="marcador-top">
       <h2>${esc(j.nombre)}</h2>
-      <p>${datos.partidos.length} partidos${mx?` · ${mx} Liga MX`:''}${eu?` · ${eu} Europa`:''} · ${dinero(j.costo)} ${esc(j.moneda)} por boleta</p>
+      <p>${datos.partidos.length} ${datos.partidos.length===1?'partido':'partidos'}${mx?` · ${mx} Liga MX`:''}${eu?` · ${eu} de otras ligas`:''} · ${dinero(j.costo)} ${esc(j.moneda)} por boleta</p>
     </div>
     ${j.estado === 'abierta'
       ? `<div class="reloj" data-reloj="${j.fecha_limite}"></div>`
-      : `<div class="reloj"><span class="num">${j.estado === 'cerrada' ? 'EN JUEGO' : 'FINALIZADA'}</span></div>`}
+      : `<div class="reloj"><span class="num">${j.estado === 'cerrada' ? 'EN JUEGO' : (j.estado === 'borrador' ? 'EN PREPARACIÓN' : 'FINALIZADA')}</span></div>`}
     <div class="bolsa">
       <span>Bolsa acumulada<br>${datos.boletos.length} ${datos.boletos.length===1?'boleta':'boletas'} en juego</span>
       <b>${dinero(bolsa())}</b>
@@ -723,8 +732,9 @@ function cabecera(){
    ============================================================ */
 function vistaBoleta(){
   const j = datos.jornada;
-  if(!j) return `<div class="card"><div class="vacio">No hay ninguna jornada publicada todavía.<br>Espera el aviso de la organización.</div></div>`;
-  if(!listaJornada()) return cabecera() + `<div class="aviso info">Esta jornada está en preparación. Se abre cuando la organización cargue los ${META_PARTIDOS} partidos.</div>`;
+  if(!j) return `<div class="card"><div class="vacio">No hay ninguna jornada publicada todavía.<br>Te avisamos por WhatsApp en cuanto salga la próxima.</div></div>`;
+  if(esStaff()) return cabecera() + `<div class="aviso info">Los organizadores no llenamos boleta. Para jugar, crea un perfil aparte con otro número de WhatsApp.</div>` + soloLectura();
+  if(j.estado === 'borrador') return `<div class="card"><div class="vacio">No hay ninguna jornada publicada todavía.</div></div>`;
 
   const mio = miBoleto();
   const editable = j.estado === 'abierta' && new Date(j.fecha_limite) > new Date();
@@ -781,6 +791,25 @@ function vistaBoleta(){
     </div>${pie}`;
 }
 
+function soloLectura(){
+  if(!datos.partidos.length) return '';
+  return `<div class="card">
+    <div class="card-cab"><h3>Partidos de la jornada</h3><em>vista</em></div>
+    ${porLiga(datos.partidos).map(g => `
+      <div class="grupo">${esc(abrevia(g.liga))}</div>
+      ${g.partidos.map(p => `
+        <div class="filap">
+          <div class="equipos">
+            <div class="l"><span class="num-p">${p.orden}</span>${esc(p.local)}</div>
+            <div class="vs">VS</div>
+            <div class="v">${esc(p.visita)}</div>
+            ${p.hora ? `<div class="hr">${esc(p.hora)}</div>` : ''}
+          </div>
+          <div class="picks"><div class="pick sel" style="width:auto;padding:0 14px">${p.resultado || '—'}</div></div>
+        </div>`).join('')}`).join('')}
+  </div>`;
+}
+
 function bannerVerificar(){
   const texto = `Soy ${yo.nombre}. Mi código para las QUINIELAS EL PIJI ACHOTERO es ${yo.codigo_verif||''}`;
   const link = CFG.whatsapp_org ? `https://wa.me/${CFG.whatsapp_org}?text=${encodeURIComponent(texto)}` : `https://wa.me/?text=${encodeURIComponent(texto)}`;
@@ -791,6 +820,7 @@ function bannerVerificar(){
 function marcar(id, v){ borrador[id] = v; pintar(); }
 
 async function guardarBoleta(){
+  if(esStaff()) return aviso('bolMsg','Los organizadores no participamos. Si quieres jugar, crea un perfil aparte con otro número.');
   const j = datos.jornada;
   if(new Date(j.fecha_limite) <= new Date()){ await cargar(); return aviso('bolMsg','El registro acaba de cerrar.'); }
   if(!yo.verificado) return aviso('bolMsg','Primero verifica tu WhatsApp.');
@@ -1182,6 +1212,7 @@ function vistaPerfil(){
     </div>
   </div>
 
+  ${esStaff() ? `<div class="aviso info">Como ${tituloRol(yo.rol).toLowerCase()} no participas en las quinielas. Si quieres jugar, crea un perfil aparte con otro número de WhatsApp.</div>` : `
   <div class="stats">
     <div class="stat"><b>${h.jugadas}</b><span>Jornadas jugadas</span></div>
     <div class="stat"><b>${h.aciertos}</b><span>Aciertos totales</span></div>
@@ -1191,8 +1222,7 @@ function vistaPerfil(){
     <div class="stat"><b>${prom}</b><span>Promedio por jornada</span></div>
     <div class="stat"><b>${dinero(h.premio)}</b><span>Ganado en premios</span></div>
   </div>
-
-  <div class="seccion"><h3>Mis jornadas</h3><div class="card">${lista}</div></div>
+  <div class="seccion"><h3>Mis jornadas</h3><div class="card">${lista}</div></div>`}
   ${otras ? `<div class="seccion"><h3>Otras jornadas</h3><div class="card">${otras}</div></div>` : ''}
 
   <div class="seccion">
@@ -1262,6 +1292,25 @@ function vistaAdmin(){
   const retPend    = datos.retiros.filter(r => r.estado === 'pendiente');
 
   return `
+  ${avisoJornada ? `
+  <div class="seccion" id="cajaAviso">
+    <h3>Avisar a los participantes</h3>
+    <p>${avisoJornada.jugadores.length} ${avisoJornada.jugadores.length===1?'participante verificado':'participantes verificados'}.</p>
+    <div class="card"><div class="card-cuerpo">
+      <div class="datos-pago" style="white-space:pre-wrap;font-size:13px;line-height:1.6;max-height:220px;overflow-y:auto">${esc(avisoJornada.texto)}</div>
+      <button class="btn" onclick="copiarAviso()">Copiar aviso para el grupo</button>
+      <div id="avMsg"></div>
+      <p class="mini">Lo más rápido es copiarlo y pegarlo en el grupo de WhatsApp. Si prefieres mandarlo uno por uno, usa los botones de abajo.</p>
+    </div></div>
+    <div class="card">${avisoJornada.jugadores.map(u => `
+      <div class="jrow">
+        <div><div class="t">${u.avatar||'⚽'} ${esc(u.nombre)}</div><div class="s">${bonito(u.whatsapp)}</div></div>
+        <button class="btn chico fantasma" onclick="window.open('https://wa.me/${soloD(u.whatsapp)}?text=${encodeURIComponent(avisoJornada.texto)}','_blank')">WhatsApp</button>
+      </div>`).join('') || '<div class="vacio">Todavía no hay participantes verificados a quién avisar.</div>'}
+    </div>
+    <button class="btn fantasma" onclick="avisoJornada=null;pintar()">Cerrar aviso</button>
+  </div>` : ''}
+
   ${depPend.length ? `<div class="seccion">
     <h3>Depósitos por confirmar (${depPend.length})</h3>
     <p>Revisa que el dinero haya llegado antes de acreditar.</p>
@@ -1297,8 +1346,10 @@ function vistaAdmin(){
         <input id="njNombre" placeholder="Jornada 8 · sábado y domingo"></div>
       <div class="fila2">
         <div class="campo"><label for="njCosto">Costo por boleta</label><input id="njCosto" type="number" value="25" step="1"></div>
-        <div class="campo"><label for="njMoneda">Moneda</label><select id="njMoneda"><option>USD</option><option>MXN</option></select></div>
+        <div class="campo"><label for="njTotal">Cuántos partidos</label>
+          <select id="njTotal">${[6,7,8,9,10,11,12,13,14,15].map(n => `<option ${n===10?'selected':''}>${n}</option>`).join('')}</select></div>
       </div>
+      <input id="njMoneda" type="hidden" value="USD">
       <div class="campo"><label for="njLimite">Cierra el</label><input id="njLimite" type="datetime-local"></div>
       <div class="fila3">
         <div class="campo"><label for="njP1">% 1er lugar</label><input id="njP1" type="number" value="70"></div>
@@ -1307,7 +1358,7 @@ function vistaAdmin(){
       </div>
       <button class="btn" onclick="crearJornada()">Crear jornada</button>
       <div id="njMsg"></div>
-      <p class="mini">Si todo se lo lleva el primero, pon 100 / 0 / 0.</p>
+      <p class="mini">La jornada nace en borrador: nadie la ve hasta que cargues todos los partidos y le des Publicar. Si todo se lo lleva el primero, pon 100 / 0 / 0.</p>
     </div></div>
   </div>
 
@@ -1430,8 +1481,9 @@ function vistaAdmin(){
 
 function panelJornada(j){
   const n = datos.partidos.length;
+  const meta = metaDe(j);
   const mx = datos.partidos.filter(p => p.liga === 'Liga MX').length;
-  const barritas = Array.from({length: Math.max(META_PARTIDOS, n)}, (_,i) => {
+  const barritas = Array.from({length: Math.max(meta, n)}, (_,i) => {
     const p = datos.partidos[i];
     return `<div class="barrita ${p ? (p.liga==='Liga MX'?'mx':'on') : ''}"></div>`;
   }).join('');
@@ -1466,9 +1518,9 @@ function panelJornada(j){
 
     <div class="card"><div class="card-cuerpo">
       <div class="progreso">
-        <div class="cifra">${n}/${META_PARTIDOS}</div>
-        <div class="txt">${mx} Liga MX · ${n-mx} Europa<br>
-          ${n < META_PARTIDOS ? `Faltan ${META_PARTIDOS-n}. La jornada no se abre hasta completar los ${META_PARTIDOS}.` : (n === META_PARTIDOS ? 'Jornada completa y visible para todos' : `Llevas ${n-META_PARTIDOS} de más`)}</div>
+        <div class="cifra">${n}/${meta}</div>
+        <div class="txt">${mx} Liga MX · ${n-mx} de otras ligas<br>
+          ${n < meta ? `Faltan ${meta-n} ${meta-n===1?'partido':'partidos'} para poder publicar` : 'Jornada completa, ya se puede publicar'}</div>
       </div>
       <div class="barritas">${barritas}</div>
 
@@ -1497,14 +1549,22 @@ function panelJornada(j){
       ${listaPartidos}
     </div>` : ''}
 
-    <div class="${esDueno()?'fila2':''}" style="margin-top:14px">
-      <button class="btn fantasma" onclick="cambiarEstado('${j.estado==='abierta'?'cerrada':'abierta'}')">
-        ${j.estado==='abierta'?'Cerrar registro':'Reabrir registro'}
+    ${j.estado === 'borrador' ? `
+      <button class="btn" onclick="publicarJornada()" ${n < meta ? 'disabled' : ''}>
+        ${n < meta ? `Faltan ${meta-n} partidos para publicar` : 'Publicar jornada y avisar'}
       </button>
-      ${esDueno() ? `<button class="btn" onclick="finalizarJornada()" ${j.premios_pagados?'disabled':''}>${j.premios_pagados?'Premios pagados':'Finalizar y pagar'}</button>` : ''}
-    </div>
-    ${!esDueno() ? `<p class="mini">El cierre final y el pago de premios los maneja Jared.</p>` : ''}
-    <button class="btn fantasma" onclick="convocar()">Convocar por WhatsApp</button>
+      <button class="btn fantasma" onclick="cambiarTotal()">Cambiar total de partidos (${meta})</button>
+      <p class="mini">Mientras esté en borrador, nadie más la ve. Al publicarla se abre el registro y se prepara el aviso para todos.</p>
+    ` : `
+      <div class="${esDueno()?'fila2':''}" style="margin-top:14px">
+        <button class="btn fantasma" onclick="cambiarEstado('${j.estado==='abierta'?'cerrada':'abierta'}')">
+          ${j.estado==='abierta'?'Cerrar registro':'Reabrir registro'}
+        </button>
+        ${esDueno() ? `<button class="btn" onclick="finalizarJornada()" ${j.premios_pagados?'disabled':''}>${j.premios_pagados?'Premios pagados':'Finalizar y pagar'}</button>` : ''}
+      </div>
+      ${!esDueno() ? `<p class="mini">El cierre final y el pago de premios los maneja Jared.</p>` : ''}
+      <button class="btn fantasma" onclick="avisarTodos()">Avisar a los participantes</button>
+    `}
 
     <div class="card">
       <div class="card-cab"><h3>Boletas de esta jornada</h3></div>
@@ -1524,7 +1584,8 @@ async function crearJornada(){
   if(nombre.length < 3) return aviso('njMsg','Ponle nombre a la jornada.');
   if(!limite)           return aviso('njMsg','Falta la fecha de cierre.');
   const { data, error } = await sb.from('jornadas').insert({
-    nombre, costo, moneda:$('njMoneda').value, fecha_limite:new Date(limite).toISOString(),
+    nombre, costo, moneda:'USD', fecha_limite:new Date(limite).toISOString(),
+    total_partidos:Number($('njTotal').value)||10, estado:'borrador',
     pct1:Number($('njP1').value)||0, pct2:Number($('njP2').value)||0, pct3:Number($('njP3').value)||0
   }).select().single();
   if(error) return aviso('njMsg','No se pudo crear: ' + error.message);
@@ -1535,7 +1596,8 @@ async function agregarPartido(){
   const local = $('apLocal').value.trim(), visita = $('apVisita').value.trim();
   if(!local || !visita) return aviso('apMsg','Faltan los dos equipos.');
   if(local.toLowerCase() === visita.toLowerCase()) return aviso('apMsg','Un equipo no juega contra sí mismo.');
-  if(datos.partidos.length >= META_PARTIDOS) return aviso('apMsg',`Ya tienes los ${META_PARTIDOS} partidos. Quita uno si quieres cambiarlo.`);
+  const meta = metaDe(datos.jornada);
+  if(datos.partidos.length >= meta) return aviso('apMsg',`Ya tienes los ${meta} partidos de esta jornada. Quita uno si quieres cambiarlo, o sube el total desde Cambiar total.`);
   const { error } = await sb.from('partidos').insert({
     jornada_id: datos.jornada.id, orden: datos.partidos.length + 1,
     liga: ligaSel, local, visita, hora: $('apHora').value.trim() || null
@@ -1685,6 +1747,58 @@ async function guardarTerminos(){
   await sb.from('config').upsert({ clave:'terminos', valor }, { onConflict:'clave' });
   await cargar();
   aviso('ctMsg','Cláusulas guardadas.','ok');
+}
+
+async function cambiarTotal(){
+  if(!esStaff()) return;
+  const t = prompt('¿Cuántos partidos va a llevar esta jornada?', metaDe(datos.jornada));
+  if(t === null) return;
+  const n = parseInt(t, 10);
+  if(!(n >= 1 && n <= 20)) return alert('Pon un número entre 1 y 20.');
+  if(n < datos.partidos.length) return alert(`Ya tienes ${datos.partidos.length} partidos cargados. Quita los que sobren primero.`);
+  await sb.from('jornadas').update({ total_partidos:n }).eq('id', datos.jornada.id);
+  await cargar();
+}
+
+async function publicarJornada(){
+  if(!esStaff()) return;
+  const j = datos.jornada, meta = metaDe(j);
+  if(datos.partidos.length < meta) return alert(`Faltan partidos. Llevas ${datos.partidos.length} de ${meta}.`);
+  if(new Date(j.fecha_limite) <= new Date()) return alert('La hora de cierre ya pasó. Cámbiala antes de publicar.');
+  if(!confirm(`¿Publicar "${j.nombre}"?\n\n${meta} partidos · ${dinero(j.costo)} la boleta.\nEn cuanto la publiques, todos los participantes la pueden llenar.`)) return;
+  await sb.from('jornadas').update({ estado:'abierta', publicada_en:new Date().toISOString() }).eq('id', j.id);
+  await cargar();
+  avisarTodos();
+}
+
+function textoAviso(){
+  const j = datos.jornada;
+  let t = `*QUINIELAS EL PIJI ACHOTERO*\n_Ya salió la ${j.nombre}_\n\n`;
+  t += `${datos.partidos.length} partidos · ${dinero(j.costo)} la boleta\n`;
+  t += `Cierra: ${fechaMX(j.fecha_limite)}\nGana quien más aciertos junte.\n\n`;
+  porLiga(datos.partidos).forEach(g => {
+    t += `_${abrevia(g.liga)}_\n`;
+    g.partidos.forEach(p => t += `${p.orden}. ${p.local} vs ${p.visita}${p.hora?' · '+p.hora:''}\n`);
+    t += `\n`;
+  });
+  t += `Llena tu boleta aquí:\n${location.origin}`;
+  return t;
+}
+
+function avisarTodos(){
+  const jugadores = datos.usuarios.filter(u => esJugador(u) && u.verificado && u.activo);
+  avisoJornada = { texto: textoAviso(), jugadores };
+  tab = 'admin'; armarTabs(); pintar();
+  setTimeout(() => document.getElementById('cajaAviso')?.scrollIntoView({behavior:'smooth',block:'center'}), 60);
+}
+
+async function copiarAviso(){
+  try{
+    await navigator.clipboard.writeText(avisoJornada.texto);
+    aviso('avMsg','Aviso copiado. Pégalo en el grupo de WhatsApp.','ok');
+  }catch(e){
+    aviso('avMsg','No se pudo copiar solo. Selecciona el texto de arriba y cópialo a mano.');
+  }
 }
 
 function convocar(){
